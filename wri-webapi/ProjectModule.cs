@@ -29,12 +29,15 @@ namespace wri_webapi
                 const string spatialQuery = "select 'point' as origin," +
                                             "pt.FeatureID as featureId," +
                                             "pt.TypeDescription as type," +
-                                            "pt.FeatureSubTypeDescription,pt.ActionDescription,null as size " +
+                                            "pt.FeatureSubTypeDescription as subtype," +
+                                            "pt.ActionDescription as action," +
+                                            "null as size " +
                                             "from POINT pt where pt.Project_ID = @id " +
                                             "union select 'line' as origin," +
                                             "l.FeatureID as id," +
                                             "l.TypeDescription as type," +
-                                            "l.FeatureSubTypeDescription,l.ActionDescription," +
+                                            "l.FeatureSubTypeDescription as subtype," +
+                                            "l.ActionDescription as action," +
                                             "cast(round(l.Shape.STLength() * 3.28084,2) as varchar) + ' ft' as size " +
                                             "from LINE l where l.Project_ID = @id " +
                                             "union select 'poly' as origin," +
