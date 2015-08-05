@@ -26,6 +26,7 @@
             Parent = feature.Parent;
             HasChildren = true;
             Size = feature.Size;
+            Description = feature.Description;
         }
 
         // unique id for dstore
@@ -48,6 +49,8 @@
         public bool HasChildren { get; set; }
         // The area in sq/mi or length in ft of polygons and lines
         public string Size { get; set; }
+        // The description 
+        public string Description { get; set; }
 
         public override string ToString()
         {

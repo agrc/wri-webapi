@@ -31,6 +31,7 @@ namespace wri_webapi
                                             "pt.TypeDescription as type," +
                                             "pt.FeatureSubTypeDescription as subtype," +
                                             "pt.ActionDescription as action," +
+                                            "pt.description," +
                                             "null as size " +
                                             "from POINT pt where pt.Project_ID = @id " +
                                             "union select 'line' as origin," +
@@ -38,6 +39,7 @@ namespace wri_webapi
                                             "l.TypeDescription as type," +
                                             "l.FeatureSubTypeDescription as subtype," +
                                             "l.ActionDescription as action," +
+                                            "null as description," +
                                             "cast(round(l.Shape.STLength() * 3.28084,2) as varchar) + ' ft' as size " +
                                             "from LINE l where l.Project_ID = @id " +
                                             "union select 'poly' as origin," +
@@ -45,6 +47,7 @@ namespace wri_webapi
                                             "p.TypeDescription as Type," +
                                             "a.ActionDescription as SubType," +
                                             "t.TreatmentTypeDescription as Action," +
+                                            "null as description," +
                                             "cast(round(p.Shape.STArea() * 0.0015625,2) as varchar) + ' mi²' as size " +
                                             "from POLY p " +
                                             "left outer join dbo.AreaACTION a on p.FeatureID = a.FeatureId " +
