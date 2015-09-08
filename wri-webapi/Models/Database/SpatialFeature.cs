@@ -1,7 +1,11 @@
-﻿namespace wri_webapi.Models.Database
+﻿using wri_webapi.Extensions;
+
+namespace wri_webapi.Models.Database
 {
     public class SpatialFeature
     {
+        private string _size;
+
         public SpatialFeature(SpatialFeature feature, int id, bool header)
         {
             Id = id;
@@ -48,7 +52,20 @@
         // In the tree, if the item has children this is true
         public bool HasChildren { get; set; }
         // The area in sq/mi or length in ft of polygons and lines
-        public string Size { get; set; }
+        public string Size
+        {
+            get
+            {
+                if (Origin == "poly")
+                {
+                    return _size.InAcres();
+                }
+                
+                return _size.InFeet();
+            }
+            set { _size = value; }
+        }
+
         // The description 
         public string Description { get; set; }
 

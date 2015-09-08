@@ -61,5 +61,7 @@ namespace wri_webapi.Models.Response
                 _features = items;
             }
         }
+        // Can the current user edit the project
+        public bool AllowEdits { get; set; }
     }
 }

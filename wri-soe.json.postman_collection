@@ -1,0 +1,128 @@
+{
+	"id": "e0c58c5c-b55e-c901-d653-00f6e8abbbbd",
+	"name": "wri-soe",
+	"description": "test the soe directly",
+	"order": [
+		"65c03a55-6a84-ecc4-7185-66490899a3e2",
+		"4ad9bec3-5e61-4829-5195-dfe088b15fa5",
+		"80d89a17-a354-507c-aa37-43c671e87455"
+	],
+	"folders": [],
+	"timestamp": 1442266462544,
+	"owner": 0,
+	"remoteLink": "",
+	"public": false,
+	"requests": [
+		{
+			"id": "4ad9bec3-5e61-4829-5195-dfe088b15fa5",
+			"headers": "Content-Type: application/x-www-form-urlencoded\n",
+			"url": "http://grwgisdev01:6080/arcgis/rest/services/WRI/Reference/MapServer/exts/wri_soe/ExtractIntersections",
+			"preRequestScript": "",
+			"pathVariables": {},
+			"method": "POST",
+			"data": [
+				{
+					"key": "geometry",
+					"value": "AQUAAAABAAAAAQIAAAACAAAA8A5DUQGVZ8EHT8TrVh5TQaJr7r+JNmjBIPn3nr2fUkE=",
+					"type": "text",
+					"enabled": true
+				},
+				{
+					"key": "criteria",
+					"value": "{\"0\": [\"region\"],\"4\": [\"owner\",\"admin\"],\"5\": [\"area_name\"]}",
+					"type": "text",
+					"enabled": true
+				},
+				{
+					"key": "f",
+					"value": "json",
+					"type": "text",
+					"enabled": true
+				}
+			],
+			"dataMode": "urlencoded",
+			"version": 2,
+			"tests": "",
+			"currentHelper": "normal",
+			"helperAttributes": {},
+			"time": 1442866569834,
+			"name": "/Extract 3857 geometry (polyline)",
+			"description": "",
+			"collectionId": "e0c58c5c-b55e-c901-d653-00f6e8abbbbd"
+		},
+		{
+			"id": "65c03a55-6a84-ecc4-7185-66490899a3e2",
+			"headers": "Content-Type: application/x-www-form-urlencoded\n",
+			"url": "http://grwgisdev01:6080/arcgis/rest/services/WRI/Reference/MapServer/exts/wri_soe/ExtractIntersections",
+			"preRequestScript": "",
+			"pathVariables": {},
+			"method": "POST",
+			"data": [
+				{
+					"key": "geometry",
+					"value": "AQYAAAACAAAAAQMAAAABAAAAFQAAAKAaL4s15GfBMDMzi3i0UkEibHhGIuRnwdgJaGqitFJBLiEf1A/kZ8EQx7q8u7RSQVwgQefm42fBYJhMaeK0UkG0WfU3uONnwahXygoAtVJBtDf4zL7jZ8FweHoZM7VSQaCrrbi+42fBSEdyvXW1UkHvOEUj1uNnwSgPC9ljtVJBxEKt5fvjZ8GIbOcfQrVSQTQRNtYW5GfBeAKaxDS1UkE41sXNKORnwRjAW9AdtVJB+n5q9EbkZ8E4PL0iF7VSQT55WOJj5GfBUGIQQMS0UkEc6+JaeeRnwYj020eCtFJBL90kqnjkZ8HQTWJQYbRSQRzr4nZt5GfBoM2qc2G0UkGHp1fAYORnwRjAW/RjtFJBJlMFRVzkZ8EAb4GwYLRSQawcWtZa5GfBgD815l60UkH8qfGwWeRnwRALtc5etFJBoBovizXkZ8EwMzOLeLRSQQEDAAAAAQAAAAoAAAC4HoVxhONnwTDdJK6QtFJBguLH3m3jZ8FgB84dobRSQeLplSI042fBGB3Jucm0UkF9PzXMOONnwZDLfwTctFJBT6+UsWHjZ8GI61HsP7VSQU5AE7dq42fBsGne7X21UkHUmuYbj+NnwcCfGnNntVJBRGlvLpzjZ8GIH2Mq9bRSQURpb6ic42fBQK1p7om0UkG4HoVxhONnwTDdJK6QtFJB",
+					"type": "text",
+					"enabled": true
+				},
+				{
+					"key": "criteria",
+					"value": "{\"0\": [\"region\"],\"4\": [\"owner\",\"admin\"],\"5\": [\"area_name\"]}",
+					"type": "text",
+					"enabled": true
+				},
+				{
+					"key": "f",
+					"value": "json",
+					"type": "text",
+					"enabled": true
+				}
+			],
+			"dataMode": "urlencoded",
+			"version": 2,
+			"tests": "",
+			"currentHelper": "normal",
+			"helperAttributes": {},
+			"time": 1442356680591,
+			"name": "/Extract 3857 geometry (polygon)",
+			"description": "",
+			"collectionId": "e0c58c5c-b55e-c901-d653-00f6e8abbbbd"
+		},
+		{
+			"id": "80d89a17-a354-507c-aa37-43c671e87455",
+			"headers": "Content-Type: application/x-www-form-urlencoded\n",
+			"url": "http://grwgisdev01:6080/arcgis/rest/services/WRI/Reference/MapServer/exts/wri_soe/ExtractIntersections",
+			"preRequestScript": "",
+			"pathVariables": {},
+			"method": "POST",
+			"data": [
+				{
+					"key": "geometry",
+					"value": "AQYAAAACAAAAAQMAAAABAAAAFQAAAKAaL4s15GfBMDMzi3i0UkEibHhGIuRnwdgJaGqitFJBLiEf1A/kZ8EQx7q8u7RSQVwgQefm42fBYJhMaeK0UkG0WfU3uONnwahXygoAtVJBtDf4zL7jZ8FweHoZM7VSQaCrrbi+42fBSEdyvXW1UkHvOEUj1uNnwSgPC9ljtVJBxEKt5fvjZ8GIbOcfQrVSQTQRNtYW5GfBeAKaxDS1UkE41sXNKORnwRjAW9AdtVJB+n5q9EbkZ8E4PL0iF7VSQT55WOJj5GfBUGIQQMS0UkEc6+JaeeRnwYj020eCtFJBL90kqnjkZ8HQTWJQYbRSQRzr4nZt5GfBoM2qc2G0UkGHp1fAYORnwRjAW/RjtFJBJlMFRVzkZ8EAb4GwYLRSQawcWtZa5GfBgD815l60UkH8qfGwWeRnwRALtc5etFJBoBovizXkZ8EwMzOLeLRSQQEDAAAAAQAAAAoAAAC4HoVxhONnwTDdJK6QtFJBguLH3m3jZ8FgB84dobRSQeLplSI042fBGB3Jucm0UkF9PzXMOONnwZDLfwTctFJBT6+UsWHjZ8GI61HsP7VSQU5AE7dq42fBsGne7X21UkHUmuYbj+NnwcCfGnNntVJBRGlvLpzjZ8GIH2Mq9bRSQURpb6ic42fBQK1p7om0UkG4HoVxhONnwTDdJK6QtFJB",
+					"type": "text",
+					"enabled": true
+				},
+				{
+					"key": "criteria",
+					"value": "{\"15\": [\"fcode_text\"]}",
+					"type": "text",
+					"enabled": true
+				},
+				{
+					"key": "f",
+					"value": "json",
+					"type": "text",
+					"enabled": true
+				}
+			],
+			"dataMode": "urlencoded",
+			"version": 2,
+			"tests": "",
+			"currentHelper": "normal",
+			"helperAttributes": {},
+			"time": 1442956454854,
+			"name": "/Extract 3857 geometry (including NHD)",
+			"description": "",
+			"collectionId": "e0c58c5c-b55e-c901-d653-00f6e8abbbbd"
+		}
+	]
+}

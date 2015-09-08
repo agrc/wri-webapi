@@ -1,0 +1,72 @@
+﻿using System;
+
+namespace wri_webapi.Extensions
+{
+    public static class StringExtensions
+    {
+        public static string InAcres(this string value)
+        {
+            if (Empty(value))
+            {
+                return null;
+            }
+            
+            try
+            {
+                var meters = Convert.ToDouble(value);
+                return string.Format("{0:#,###0.####} mi²", Math.Round(meters * 0.0015625, 4));
+            }
+            catch (Exception)
+            {
+                return value;
+            }
+        }
+
+        public static string InMiles(this string value)
+        {
+            if (Empty(value))
+            {
+                return null;
+            }
+
+            try
+            {
+                var meters = Convert.ToDouble(value);
+                return string.Format("{0:#,###0.####} mi", Math.Round(meters * 0.00062137, 4));
+            }
+            catch (Exception)
+            {
+                return value;
+            }
+        }
+
+        public static string InFeet(this string value)
+        {
+            if (Empty(value))
+            {
+                return null;
+            }
+
+            try
+            {
+                var meters = Convert.ToDouble(value);
+                return string.Format("{0:#,###0.####} ft", Math.Round(meters * 3.2808, 4));
+            }
+            catch (Exception)
+            {
+                return value;
+            } 
+        }
+
+        private static bool Empty(string value)
+        {
+            if (string.IsNullOrEmpty(value) || value.StartsWith("0.0000"))
+            {
+                return true;
+            }
+
+            return false;
+        }
+ 
+    }
+}
