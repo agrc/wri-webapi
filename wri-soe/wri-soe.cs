@@ -143,6 +143,8 @@ namespace wri_soe
 #if !DEBUG
             _logger.LogMessage(ServerLogger.msgType.infoStandard, "Extracthandler", MessageCode, "Geometry converted");
 #endif
+            var filterGeometry = (ITopologicalOperator4)geometry;
+            filterGeometry.Simplify();
 
             var filter = new SpatialFilter
             {
