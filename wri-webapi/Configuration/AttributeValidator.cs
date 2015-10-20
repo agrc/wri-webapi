@@ -27,7 +27,7 @@ namespace wri_webapi.Configuration
 
             table = table.ToLower();
 
-            if (actions == null || actions.Count() != 1)
+            if (actions == null)
             {
                 return false;
             }
@@ -41,6 +41,11 @@ namespace wri_webapi.Configuration
                                 !string.IsNullOrEmpty(x.Action) &&
                                 x.Treatments.All(t => !string.IsNullOrEmpty(t.Treatment)));
                 case "point":
+                    if (actions.Count() != 1)
+                    {
+                        return false;
+                    }
+
                     if (new[] {"guzzler", "trough", "fish passage structure"}.Contains(featureType))
                     {
                         return actions.All(x => !string.IsNullOrEmpty(x.Action) && 
@@ -49,6 +54,11 @@ namespace wri_webapi.Configuration
                     
                     return actions.All(x => !string.IsNullOrEmpty(x.Description));
                 case "line":
+                    if (actions.Count() != 1)
+                    {
+                        return false;
+                    }
+
                     return actions.All(x => !string.IsNullOrEmpty(x.Action) &&
                                                  !string.IsNullOrEmpty(x.Type));
                 

@@ -52,6 +52,41 @@ namespace wri_webapi.tests
             return _validator.ValidAttributesFor(table, type, actions);
         }
 
+        [TestCase("POLY", "terrestrial treatment area", Result = true)]
+        [TestCase("POLY", "aquatic/riparian treatment area", Result = true)]
+        [TestCase("POLY", "easement/acquisition", Result = true)]
+        public bool ValidWithMultipleActionAndTreatment(string table, string type)
+        {
+            var actions = new[]
+            {
+                new FeatureActions
+                {
+                    Action = "something",
+                    Treatments = new[]
+                    {
+                        new FeatureTreatments
+                        {
+                            Treatment = "more"
+                        }
+                    }
+                },
+                new FeatureActions
+                {
+                    Action = "more",
+                    Treatments = new[]
+                    {
+                        new FeatureTreatments
+                        {
+                            Treatment = "stuff",
+                            Herbicides = new [] {"herb"}
+                        }
+                    }
+                }
+            };
+
+            return _validator.ValidAttributesFor(table, type, actions);
+        }
+
         [TestCase("POINT", "guzzler", Result = true)]
         [TestCase("POINT", "trough", Result = true)]
         [TestCase("POINT", "fish passage structure", Result = true)]
