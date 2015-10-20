@@ -118,14 +118,17 @@
     <Compile Include="Configuration\StandardQueries.cs" />
     <Compile Include="Extensions\StringExtensions.cs" />
     <Compile Include="IndexModule.cs" />
+    <Compile Include="Lookup\FeatureCategoryToTable.cs" />
     <Compile Include="MediaTypes\TextPlainResponseFormatter.cs" />
     <Compile Include="Models\Database\Project.cs" />
+    <Compile Include="Models\Database\RelatedDetails.cs" />
     <Compile Include="Models\Database\SpatialFeature.cs" />
     <Compile Include="Models\Database\User.cs" />
     <Compile Include="Models\Request\FeatureActions.cs" />
     <Compile Include="Models\Request\FeatureTreatments.cs" />
     <Compile Include="Models\Request\SaveFeatureRequest.cs" />
     <Compile Include="Models\Request\UserDetailsRequest.cs" />
+    <Compile Include="Models\Response\SpatialFeatureResponse.cs" />
     <Compile Include="Models\Response\ProjectWithFeaturesResponse.cs" />
     <Compile Include="ProjectModule.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />

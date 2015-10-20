@@ -19,5 +19,6 @@ namespace wri_webapi.Configuration
         Task<IEnumerable<int?>> ActionQueryAsync(IDbConnection connection, object param = null); 
         Task<IEnumerable<int?>> TreatmentQueryAsync(IDbConnection connection, object param = null); 
         Task<int?> ExecuteAsync(IDbConnection connection, string type, object param = null);
+        Task<IEnumerable<RelatedDetails>> RelatedDataQueryAsync(IDbConnection connection, object param = null);
     }
 }

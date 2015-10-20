@@ -140,6 +140,11 @@ namespace wri_webapi.tests.Configuration
             throw new NotImplementedException();
         }
 
+        public Task<IEnumerable<RelatedDetails>> RelatedDataQueryAsync(IDbConnection connection, object param = null)
+        {
+            throw new NotImplementedException();
+        }
+
         private static IDictionary<string, object> AnonymousObjectToDictionary(object propertyBag)
         {
             var result = new Dictionary<string, object>();

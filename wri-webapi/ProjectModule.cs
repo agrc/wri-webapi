@@ -13,7 +13,9 @@ using Newtonsoft.Json;
 using wri_shared.Models.Response;
 using wri_webapi.Configuration;
 using wri_webapi.Extensions;
+using wri_webapi.Lookup;
 using wri_webapi.MediaTypes;
+using wri_webapi.Models.Database;
 using wri_webapi.Models.Request;
 using wri_webapi.Models.Response;
 using wri_webapi.Properties;
@@ -22,22 +24,6 @@ namespace wri_webapi
 {
     public class ProjectModule : NancyModule
     {
-        public Dictionary<string, string> Categories = new Dictionary<string, string>
-        {
-            {"terrestrial treatment area", "POLY"},
-            {"aquatic/riparian treatment area", "POLY"},
-            {"affected area", "POLY"},
-            {"easement/acquisition", "POLY"},
-            {"guzzler", "POINT"},
-            {"trough", "POINT"},
-            {"water control structure", "POINT"},
-            {"other point feature", "POINT"},
-            {"fish passage structure", "POINT"},
-            {"fence", "LINE"},
-            {"pipeline", "LINE"},
-            {"dam", "LINE"}
-        };
-
         public ProjectModule(IQuery queries, IAttributeValidator validator)
         {
             Get["/project/{id:int}", true] = async (_, ctx) =>
@@ -113,6 +99,56 @@ namespace wri_webapi
                 }
             };
 
+            Get["/project/{id:int}/feature/{featureId:int}", true] = async (_, ctx) =>
+            {
+                var featureId = int.Parse(_.featureId);
+                var featureCategory = (string)Request.Query.featureCategory;
+
+                // make sure feature type is valid
+                if (featureCategory == null || !FeatureCategoryToTable.Contains(featureCategory.ToLower()))
+                {
+                    return Negotiate.WithReasonPhrase("Incomplete request")
+                        .WithStatusCode(HttpStatusCode.BadRequest)
+                        .WithModel("Category not found.");
+                }
+
+                IEnumerable<RelatedDetails> records;
+
+                var connectionString = ConfigurationManager.ConnectionStrings["db"].ConnectionString;
+                using (var connection = new SqlConnection(connectionString))
+                {
+                    try
+                    {
+                        await connection.OpenAsync();
+                    }
+                    catch (SqlException)
+                    {
+                        return Negotiate.WithReasonPhrase("Database Error")
+                            .WithStatusCode(HttpStatusCode.InternalServerError)
+                            .WithModel("Unable to connect to the database.");
+                    }
+                    
+                    // get the database table to use
+                    var table = FeatureCategoryToTable.GetTableFrom(featureCategory);
+
+                    records = await queries.RelatedDataQueryAsync(connection, new
+                    {
+                        table,
+                        featureId
+                    });
+                }
+
+                var response = new SpatialFeatureResponse
+                {
+                    County = records.Where(x=>x.Origin == "county"),
+                    FocusArea = records.Where(x=>x.Origin == "focus"),
+                    SageGrouse = records.Where(x=>x.Origin == "sgma"),
+                    LandOwnership = records.Where(x=>x.Origin == "owner")
+                };
+
+                return response;
+            };
+
             Post["/project/{id:int}/feature/create", true] = async (_, ctx) =>
             {
                 var id = int.Parse(_.id);
@@ -135,7 +171,7 @@ namespace wri_webapi
                 }
 
                 // make sure feature type is valid
-                if (!Categories.Keys.Contains(model.Category.ToLower()))
+                if (!FeatureCategoryToTable.Contains(model.Category.ToLower()))
                 {
                     return Negotiate.WithReasonPhrase("Incomplete request")
                         .WithStatusCode(HttpStatusCode.BadRequest)
@@ -143,7 +179,7 @@ namespace wri_webapi
                 }
 
                 // get the database table to use
-                var featureClass = Categories[model.Category.ToLower()];
+                var featureClass = FeatureCategoryToTable.GetTableFrom(model.Category);
 
                 var connectionString = ConfigurationManager.ConnectionStrings["db"].ConnectionString;
                 using (var connection = new SqlConnection(connectionString))
@@ -215,6 +251,7 @@ namespace wri_webapi
                     {
                         geometry = SqlGeometry.Parse(model.Geometry);
                         geometry.STSrid = 3857;
+                        geometry = geometry.MakeValid();
                     }
                     catch (Exception ex)
                     {
@@ -224,7 +261,7 @@ namespace wri_webapi
                     }
 
                     // check if polygons overlap
-                    if (Categories[model.Category.ToLower()] == "POLY")
+                    if (featureClass == "POLY")
                     {
                         var counts = await queries.OverlapQueryAsync(connection, new
                         {
@@ -264,12 +301,11 @@ namespace wri_webapi
                         Settings.Default.gisServerBaseUrl); 
                     
                     var uri = new Uri(url);
-                    
+                    var base64Geometry = Convert.ToBase64String(geometry.STAsBinary().Value); 
                     var request = await httpClient.PostAsync(uri,
                         new FormUrlEncodedContent(new[]
                         {
-                            new KeyValuePair<string, string>("geometry",
-                                Convert.ToBase64String(geometry.STAsBinary().Value)),
+                            new KeyValuePair<string, string>("geometry", base64Geometry),
                             new KeyValuePair<string, string>("criteria", JsonConvert.SerializeObject(criteria)),
                             new KeyValuePair<string, string>("f", "json")
                         }));
@@ -289,7 +325,7 @@ namespace wri_webapi
                     }
 
                     var attributes = soeResponse.Result.Attributes;
-
+                    int? primaryKey = null;
                     // create transaction for new feature
                     using (var transaction = new TransactionScope(TransactionScopeAsyncFlowOption.Enabled))
                     {
@@ -304,8 +340,6 @@ namespace wri_webapi
                                          .WithStatusCode(HttpStatusCode.InternalServerError)
                                          .WithModel("There was a problem deserializing the feature actions. " + ex.Message);
                         }
-
-                        int? primaryKey = null;
 
                         if (!validator.ValidAttributesFor(featureClass, model.Category, actions))
                         {
@@ -480,6 +514,11 @@ namespace wri_webapi
                             await queries.ExecuteAsync(connection, "counties", data);
                         }
 
+                        await queries.ExecuteAsync(connection, "ProjectSpatial", new
+                        {
+                            id
+                        });
+
                         transaction.Complete();
                     }
 
@@ -489,15 +528,18 @@ namespace wri_webapi
                             return
                                 Negotiate.WithModel(string.Format("Successfully created a new {0} covering {1}.",
                                     model.Category,
-                                    geometry.STArea().Value.ToString(CultureInfo.CurrentCulture).InAcres()));
+                                    geometry.STArea().Value.ToString(CultureInfo.CurrentCulture).InAcres()))
+                                    .WithHeader("FeatureId", primaryKey.ToString());
                         case "line":
                             return
                                 Negotiate.WithModel(string.Format("Successfully created a new {0} stretching {1}.",
                                     model.Category,
-                                    geometry.STLength().Value.ToString(CultureInfo.CurrentCulture).InAcres()));
+                                    geometry.STLength().Value.ToString(CultureInfo.CurrentCulture).InAcres()))
+                                    .WithHeader("FeatureId", primaryKey.ToString());
                     }
 
-                    return Negotiate.WithModel(string.Format("Successfully created a new {0}.", model.Category));
+                    return Negotiate.WithModel(string.Format("Successfully created a new {0}.", model.Category))
+                        .WithHeader("FeatureId", primaryKey.ToString());
                 }
             };
         }

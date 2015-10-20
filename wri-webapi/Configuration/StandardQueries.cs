@@ -131,6 +131,24 @@ namespace wri_webapi.Configuration
                             "WHERE Project_ID = @id"
             },
             {
+                "RelatedData", "SELECT 'county' as origin, @table as [table], " +
+                               "c.County as name, null as extra, c.[Intersect] as [space] " +
+                               "FROM COUNTY c " +
+                               "WHERE c.FeatureID = @featureId AND c.FeatureClass = @table " +
+                               "UNION SELECT 'focus' as origin, @table as [table], " +
+                               "f.Region as name, null as extra, f.[Intersect] as [space] " +
+                               "FROM FOCUSAREA f " +
+                               "WHERE f.FeatureID = @featureId AND f.FeatureClass = @table " +
+                               "UNION SELECT 'sgma' as origin, @table as [table], " +
+                               "s.SGMA as name, null as extra, s.[Intersect] as [space] " +
+                               "FROM SGMA s " +
+                               "WHERE @featureId = s.FeatureID AND s.FeatureClass = @table " +
+                               "UNION SELECT 'owner' as origin, @table as [table], " +
+                               "l.Owner as name, l.Admin as extra, l.[Intersect] as [space] " +
+                               "FROM LANDOWNER l " +
+                               "WHERE l.FeatureID = @featureId AND l.FeatureClass = @table"
+            },
+            {
                 "User", "SELECT TOP 1 FirstName + ' ' + LastName Name, user_group Role, user_id id " +
                         "FROM [dbo].[USERS] WHERE userKey = @key AND token = @token AND Active = 'YES'"
             },
@@ -224,6 +242,11 @@ namespace wri_webapi.Configuration
         public async Task<int?> ExecuteAsync(IDbConnection connection, string type, object param = null)
         {
             return await connection.ExecuteAsync(_sql[type], param);
+        }
+
+        public async Task<IEnumerable<RelatedDetails>> RelatedDataQueryAsync(IDbConnection connection, object param = null)
+        {
+            return await connection.QueryAsync<RelatedDetails>(_sql["RelatedData"], param);
         }
     }
 }
