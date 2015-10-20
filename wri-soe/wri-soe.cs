@@ -140,11 +140,36 @@ namespace wri_soe
             var factory = new GeometryEnvironmentClass() as IGeometryFactory3;
             factory.CreateGeometryFromWkbVariant(Convert.FromBase64String(base64Geometry), out geometry, out read);
 
+            if (geometry.SpatialReference == null)
+            {
+                var spatialReferenceFactory = new SpatialReferenceEnvironmentClass();
+
+                //Create a projected coordinate system and define its domain, resolution, and x,y tolerance.
+                var spatialReferenceResolution = spatialReferenceFactory.CreateProjectedCoordinateSystem(3857) as ISpatialReferenceResolution;
+                spatialReferenceResolution.ConstructFromHorizon();
+                var spatialReferenceTolerance = spatialReferenceResolution as ISpatialReferenceTolerance;
+                spatialReferenceTolerance.SetDefaultXYTolerance();
+                var spatialReference = spatialReferenceResolution as ISpatialReference;
+
+                geometry.SpatialReference = spatialReference;
+            }
+
 #if !DEBUG
             _logger.LogMessage(ServerLogger.msgType.infoStandard, "Extracthandler", MessageCode, "Geometry converted");
 #endif
             var filterGeometry = (ITopologicalOperator4)geometry;
             filterGeometry.Simplify();
+
+            if (geometry.GeometryType == esriGeometryType.esriGeometryPolygon)
+            {
+                var filterGeometry = (ITopologicalOperator4) geometry;
+                filterGeometry.Simplify();
+
+                if (((IArea)geometry).Area < 0)
+                {
+                    ((ICurve)geometry).ReverseOrientation();
+                }
+            }
 
             var filter = new SpatialFilter
             {
