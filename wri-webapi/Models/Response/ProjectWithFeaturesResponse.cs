@@ -21,7 +21,7 @@ namespace wri_webapi.Models.Response
                     HasChildren = false
                 }).ToList();
 
-                if (!items.Any(x => new[] {"Terrestrial", "Aquatic"}.Contains(x.Type)))
+                if (!items.Any(x => new[] {"terrestrial treatment area", "aquatic/riparian treatment area"}.Contains(x.Type.ToLower())))
                 {
                     _features = items;
                 }

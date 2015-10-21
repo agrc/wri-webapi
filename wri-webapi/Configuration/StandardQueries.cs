@@ -120,9 +120,9 @@ namespace wri_webapi.Configuration
                             "FROM line L WHERE l.Project_ID = @id " +
                             "UNION SELECT 'poly' as origin," +
                             "p.FeatureID as featureId," +
-                            "p.TypeDescription as Type," +
-                            "a.ActionDescription as SubType," +
-                            "t.TreatmentTypeDescription as Action," +
+                            "p.TypeDescription as type," +
+                            "t.TreatmentTypeDescription as subtype," +
+                            "a.ActionDescription as action," +
                             "null as description," +
                             "p.Shape.STArea() as size " +
                             "FROM POLY p " +
@@ -253,7 +253,8 @@ namespace wri_webapi.Configuration
             return await connection.ExecuteAsync(_sql[type], param);
         }
 
-        public async Task<IEnumerable<RelatedDetails>> RelatedDataQueryAsync(IDbConnection connection, object param = null)
+        public async Task<IEnumerable<RelatedDetails>> RelatedDataQueryAsync(IDbConnection connection,
+            object param = null)
         {
             return await connection.QueryAsync<RelatedDetails>(_sql["RelatedData"], param);
         }
