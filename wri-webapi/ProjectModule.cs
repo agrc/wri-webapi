@@ -56,11 +56,12 @@ namespace wri_webapi
 
                     var features = await queries.FeatureQueryAsync(connection, new {id});
                     response.Features = features;
-
+                    var reason = "";
                     if (incompleteAttributes)
                     {
                         return Negotiate.WithModel(response)
-                            .WithStatusCode(HttpStatusCode.OK);
+                            .WithStatusCode(HttpStatusCode.OK)
+                            .WithHeader("reason", "incomplete attributes");
                     }
 
                     var users = await queries.UserQueryAsync(connection, new {key = model.Key, token = model.Token});
@@ -70,18 +71,21 @@ namespace wri_webapi
                     if (user == null)
                     {
                         response.AllowEdits = false;
+                        reason = "User is null. ";
                     }
 
                     // anonymous and public users cannot create features
                     else if (new[] {"GROUP_ANONYMOUS", "GROUP_PUBLIC"}.Contains(user.Role))
                     {
                         response.AllowEdits = false;
+                        reason += "Roles is anonymous or public. ";
                     }
 
                     // if project has features no or null, block feature creation
                     else if (response.Project.Features == "No" && user.Role != "GROUP_ADMIN")
                     {
                         response.AllowEdits = false;
+                        reason += "Project is designated to have no features. ";
                     }
 
                     // cancelled and completed projects cannot be edited
@@ -100,10 +104,12 @@ namespace wri_webapi
                         if (count == 0)
                         {
                             response.AllowEdits = false;
+                            reason += "User is not a contributor. ";
                         }
                     }
 
-                    return Negotiate.WithModel(response);
+                    return Negotiate.WithModel(response)
+                            .WithHeader("reason", reason);
                 }
             };
 
