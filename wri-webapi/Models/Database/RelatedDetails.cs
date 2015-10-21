@@ -17,8 +17,18 @@ namespace wri_webapi.Models.Database
                 {
                     return _size.InAcres();
                 }
-                
-                return _size.InFeet();
+
+                if (Table.ToLower() == "line")
+                {
+                    return _size.InFeet();
+                }
+
+                if (_size == "0")
+                {
+                    return null;
+                }
+
+                return _size;
             }
             set { _size = value; }
         }

@@ -108,7 +108,7 @@ namespace wri_webapi.Configuration
                             "pt.FeatureSubTypeDescription as subtype," +
                             "pt.ActionDescription as action," +
                             "pt.description," +
-                            "null as size " +
+                            "pt.Shape.STNumPoints() as size " +
                             "FROM POINT pt WHERE pt.Project_ID = @id " +
                             "UNION SELECT 'line' as origin," +
                             "l.FeatureID as id," +

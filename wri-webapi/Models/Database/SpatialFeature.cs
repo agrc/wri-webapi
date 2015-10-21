@@ -61,7 +61,12 @@ namespace wri_webapi.Models.Database
                     return _size.InAcres();
                 }
                 
-                return _size.InFeet();
+                if (Origin == "line")
+                {
+                    return _size.InFeet();
+                }
+
+                return _size;
             }
             set { _size = value; }
         }
