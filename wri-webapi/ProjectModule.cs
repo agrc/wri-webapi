@@ -291,7 +291,7 @@ namespace wri_webapi
                     // include stream miles because it's aquatic
                     if (model.Category.ToLower() == "aquatic/riparian treatment area")
                     {
-                        criteria["15"] = new[] {"fccode_text"}; // nhd
+                        criteria["15"] = new[] {"fcode_text"}; // nhd
                     }
 
                     // send geometry to soe for calculations
@@ -459,6 +459,7 @@ namespace wri_webapi
                                 break;
                         }
 
+                        // insert related tables
                         if (attributes.ContainsKey("watershedRestoration_FocusAreas"))
                         {
                             var data = attributes["watershedRestoration_FocusAreas"].SelectMany(x => x.Attributes,
@@ -483,7 +484,7 @@ namespace wri_webapi
                                 featureClass,
                                 id = primaryKey
                             });
-
+                            
                             await queries.ExecuteAsync(connection, "landOwnership", data);
                         }
 
@@ -514,9 +515,27 @@ namespace wri_webapi
                             await queries.ExecuteAsync(connection, "counties", data);
                         }
 
+                        if (attributes.ContainsKey("streamsNHDHighRes"))
+                        {
+                            var data = attributes["streamsNHDHighRes"].SelectMany(x => x.Attributes, (original, value) => new
+                            {
+                                id,
+                                featureId = primaryKey,
+                                intersect = original.Intersect,
+                                description = value
+                            });
+
+                            await queries.ExecuteAsync(connection, "streamsNHDHighRes", data);
+                        }
+
+                        // update project centroids and calculations
                         await queries.ExecuteAsync(connection, "ProjectSpatial", new
                         {
-                            id
+                            id,
+                            terrestrial = "terrestrial treatment area",
+                            aquatic = "aquatic/riparian treatment area",
+                            affected = "affected area",
+                            easement = "easement/acquisition"
                         });
 
                         transaction.Complete();

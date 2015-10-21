@@ -92,7 +92,7 @@ namespace wri_webapi.Configuration
                 "ProjectSpatial", "UPDATE [dbo].[PROJECT] " +
                                   "SET [TerrestrialAcres] = (SELECT SUM(poly.Shape.STArea()) FROM [dbo].[POLY] poly where poly.[Project_ID] = @id AND poly.TypeDescription = @terrestrial), " +
                                   "[AqRipAcres] = (SELECT SUM(poly.Shape.STArea()) FROM [dbo].[POLY] poly where poly.[Project_ID] = @id AND LOWER(poly.TypeDescription) = @aquatic), " +
-                                  "[StreamMiles] = @stream, " +
+                                  "[StreamMiles] = (SELECT SUM([Intersect]) FROM [dbo].[STREAM] s WHERE s.[ProjectID] = @id), " +
                                   "[AffectedArea] = (SELECT SUM(poly.Shape.STArea()) FROM [dbo].[POLY] poly where poly.[Project_ID] = @id AND LOWER(poly.TypeDescription) = @affected), " +
                                   "[EasementAcquisitionAcres] = (SELECT SUM(poly.Shape.STArea()) FROM [dbo].[POLY] poly where poly.[Project_ID] = @id AND LOWER(poly.TypeDescription) = @easement), " +
                                   "[Centroid] = (SELECT geometry::ConvexHullAggregate(polygons.shape).STCentroid() FROM " +
@@ -142,11 +142,15 @@ namespace wri_webapi.Configuration
                                "UNION SELECT 'sgma' as origin, @table as [table], " +
                                "s.SGMA as name, null as extra, s.[Intersect] as [space] " +
                                "FROM SGMA s " +
-                               "WHERE @featureId = s.FeatureID AND s.FeatureClass = @table " +
+                               "WHERE s.FeatureID = @featureId AND s.FeatureClass = @table " +
                                "UNION SELECT 'owner' as origin, @table as [table], " +
                                "l.Owner as name, l.Admin as extra, l.[Intersect] as [space] " +
                                "FROM LANDOWNER l " +
-                               "WHERE l.FeatureID = @featureId AND l.FeatureClass = @table"
+                               "WHERE l.FeatureID = @featureId AND l.FeatureClass = @table " +
+                               "UNION SELECT 'nhd' as origin, @table as [table], " +
+                               "n.StreamDescription as name, null as extra, n.[Intersect] as [space] " +
+                               "FROM STREAM n " +
+                               "WHERE n.FeatureID = @featureId"
             },
             {
                 "User", "SELECT TOP 1 FirstName + ' ' + LastName Name, user_group Role, user_id id " +
@@ -183,6 +187,11 @@ namespace wri_webapi.Configuration
                             "(FeatureID, FeatureClass, County, [Intersect], County_ID) " +
                             "VALUES (@id, @featureClass, @county, @intersect, " +
                             "(SELECT Code from [dbo].[LU_COUNTY] WHERE LOWER(Value) = LOWER(@county)))"
+            },
+            {
+                "streamsNHDHighRes", "INSERT INTO [dbo].[STREAM] " +
+                                     "(ProjectID, FeatureID, StreamDescription, [Intersect]) " +
+                                     "VALUES (@id, @featureId, @description, @intersect)"
             }
         };
 
