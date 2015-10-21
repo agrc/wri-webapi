@@ -13,57 +13,57 @@ namespace wri_webapi.Configuration
         private readonly Dictionary<string, string> _sql = new Dictionary<string, string>
         {
             {
-                "POINT", "INSERT INTO [WRI].[dbo].[POINT] " +
+                "POINT", "INSERT INTO [dbo].[POINT] " +
                          "([TypeDescription], [FeatureSubTypeDescription], [ActionDescription], [Description], [Shape], " +
                          "[Project_ID], [TypeCode], [FeatureSubTypeID], [ActionID], [StatusDescription], [StatusCode]) " +
                          "VALUES (@featureType, @subType, @action, @description, @shape, @id, " +
-                         "(SELECT [FeatureTypeID] FROM [WRI].[dbo].[LU_FEATURETYPE] WHERE [FeatureTypeDescription] = @featureType)," +
-                         "(SELECT [FeatureSubTypeID] FROM [WRI].[dbo].[LU_FEATURESUBTYPE] WHERE [FeatureSubTypeDescription] = @subType)," +
-                         "(SELECT [ActionID] FROM [WRI].[dbo].[LU_ACTION] WHERE [ActionDescription] = @action)," +
-                         "(SELECT [Status] FROM [WRI].[dbo].[PROJECT] WHERE [Project_ID] = @id)," +
-                         "(SELECT [StatusID] FROM [WRI].[dbo].[PROJECT] WHERE [Project_ID] = @id)); " +
+                         "(SELECT [FeatureTypeID] FROM [dbo].[LU_FEATURETYPE] WHERE [FeatureTypeDescription] = @featureType)," +
+                         "(SELECT [FeatureSubTypeID] FROM [dbo].[LU_FEATURESUBTYPE] WHERE [FeatureSubTypeDescription] = @subType)," +
+                         "(SELECT [ActionID] FROM [dbo].[LU_ACTION] WHERE [ActionDescription] = @action)," +
+                         "(SELECT [Status] FROM [dbo].[PROJECT] WHERE [Project_ID] = @id)," +
+                         "(SELECT [StatusID] FROM [dbo].[PROJECT] WHERE [Project_ID] = @id)); " +
                          "SELECT CAST(SCOPE_IDENTITY() as int)"
             },
             {
-                "POLY", "INSERT INTO [WRI].[dbo].[POLY] " +
+                "POLY", "INSERT INTO [dbo].[POLY] " +
                         "(TypeDescription, Retreatment, Project_ID, Shape, " +
                         "TypeCode, StatusDescription, StatusCode, AreaAcres) " +
                         "VALUES (@featureType, @retreatment, @id, @shape, " +
-                        "(SELECT [FeatureTypeID] FROM [WRI].[dbo].[LU_FEATURETYPE] WHERE [FeatureTypeDescription] = @featureType)," +
-                        "(SELECT [Status] FROM [WRI].[dbo].[PROJECT] WHERE [Project_ID] = @id), " +
-                        "(SELECT [StatusID] FROM [WRI].[dbo].[PROJECT] WHERE [Project_ID] = @id), " +
+                        "(SELECT [FeatureTypeID] FROM [dbo].[LU_FEATURETYPE] WHERE [FeatureTypeDescription] = @featureType)," +
+                        "(SELECT [Status] FROM [dbo].[PROJECT] WHERE [Project_ID] = @id), " +
+                        "(SELECT [StatusID] FROM [dbo].[PROJECT] WHERE [Project_ID] = @id), " +
                         "@shape.STArea());" +
                         "SELECT CAST(SCOPE_IDENTITY() as int)"
             },
             {
-                "Action", "INSERT INTO [WRI].[dbo].[AREAACTION] " +
+                "Action", "INSERT INTO [dbo].[AREAACTION] " +
                           "([FeatureID],[ActionDescription],[ActionID]) " +
-                          "VALUES (@id, @action, (SELECT [ActionID] FROM [WRI].[dbo].[LU_ACTION] WHERE [ActionDescription] = @action));" +
+                          "VALUES (@id, @action, (SELECT [ActionID] FROM [dbo].[LU_ACTION] WHERE [ActionDescription] = @action));" +
                           "SELECT CAST(SCOPE_IDENTITY() as int)"
             },
             {
-                "Treatment", "INSERT INTO [WRI].[dbo].[AREATREATMENT] " +
+                "Treatment", "INSERT INTO [dbo].[AREATREATMENT] " +
                              "([AreaActionID], [TreatmentTypeDescription], [TreatmentTypeID]) " +
                              "VALUES (@id, @treatment, " +
-                             "(SELECT [TreatmentTypeID] FROM [WRI].[dbo].[LU_TREATMENTTYPE] WHERE [TreatmentTypeDescription] = @treatment));" +
+                             "(SELECT [TreatmentTypeID] FROM [dbo].[LU_TREATMENTTYPE] WHERE [TreatmentTypeDescription] = @treatment));" +
                              "SELECT CAST(SCOPE_IDENTITY() as int)"
             },
             {
-                "Herbicide", "INSERT INTO [WRI].[dbo].[AREAHERBICIDE] " +
+                "Herbicide", "INSERT INTO [dbo].[AREAHERBICIDE] " +
                              "([AreaTreatmentID],[HerbicideDescription],[HerbicideID]) " +
                              "VALUES(@id, @herbicide, " +
-                             "(SELECT [HerbicideID] FROM [WRI].[dbo].[LU_HERBICIDE] WHERE [HerbicideDescription] = @herbicide))"
+                             "(SELECT [HerbicideID] FROM [dbo].[LU_HERBICIDE] WHERE [HerbicideDescription] = @herbicide))"
             },
             {
-                "LINE", "INSERT INTO [WRI].[dbo].[LINE] " +
+                "LINE", "INSERT INTO [dbo].[LINE] " +
                         "([TypeDescription], [FeatureSubTypeDescription], [ActionDescription], [Description], [Shape], " +
                         "[Project_ID], [TypeCode], [FeatureSubTypeID], [ActionID], [StatusDescription], [StatusCode], [LengthFeet]) " +
                         "VALUES (@featureType, @subType, @action, @description, @shape, @id, " +
-                        "(SELECT [FeatureTypeID] FROM [WRI].[dbo].[LU_FEATURETYPE] WHERE [FeatureTypeDescription] = @featureType)," +
-                        "(SELECT [FeatureSubTypeID] FROM [WRI].[dbo].[LU_FEATURESUBTYPE] WHERE [FeatureSubTypeDescription] = @subType)," +
-                        "(SELECT [ActionID] FROM [WRI].[dbo].[LU_ACTION] WHERE [ActionDescription] = @action)," +
-                        "(SELECT [Status] FROM [WRI].[dbo].[PROJECT] WHERE [Project_ID] = @id)," +
-                        "(SELECT [StatusID] FROM [WRI].[dbo].[PROJECT] WHERE [Project_ID] = @id)," +
+                        "(SELECT [FeatureTypeID] FROM [dbo].[LU_FEATURETYPE] WHERE [FeatureTypeDescription] = @featureType)," +
+                        "(SELECT [FeatureSubTypeID] FROM [dbo].[LU_FEATURESUBTYPE] WHERE [FeatureSubTypeDescription] = @subType)," +
+                        "(SELECT [ActionID] FROM [dbo].[LU_ACTION] WHERE [ActionDescription] = @action)," +
+                        "(SELECT [Status] FROM [dbo].[PROJECT] WHERE [Project_ID] = @id)," +
+                        "(SELECT [StatusID] FROM [dbo].[PROJECT] WHERE [Project_ID] = @id)," +
                         "@shape.STLength()); " +
                         "SELECT CAST(SCOPE_IDENTITY() as int)"
             },
@@ -86,19 +86,19 @@ namespace wri_webapi.Configuration
             {
                 "ProjectMinimal",
                 "SELECT TOP 1 Project_ID projectid, ProjectManager_ID ProjectManagerId, Status, Features " +
-                "FROM [WRI].[dbo].[PROJECT] WHERE Project_ID = @id"
+                "FROM [dbo].[PROJECT] WHERE Project_ID = @id"
             },
             {
-                "ProjectSpatial", "UPDATE [WRI].[dbo].[PROJECT] " +
-                                  "SET [TerrestrialAcres] = (SELECT SUM(poly.Shape.STArea()) FROM [WRI].[dbo].[POLY] poly where poly.[Project_ID] = @id AND poly.TypeDescription = @terrestrial), " +
-                                  "[AqRipAcres] = (SELECT SUM(poly.Shape.STArea()) FROM [WRI].[dbo].[POLY] poly where poly.[Project_ID] = @id AND LOWER(poly.TypeDescription) = @aquatic), " +
+                "ProjectSpatial", "UPDATE [dbo].[PROJECT] " +
+                                  "SET [TerrestrialAcres] = (SELECT SUM(poly.Shape.STArea()) FROM [dbo].[POLY] poly where poly.[Project_ID] = @id AND poly.TypeDescription = @terrestrial), " +
+                                  "[AqRipAcres] = (SELECT SUM(poly.Shape.STArea()) FROM [dbo].[POLY] poly where poly.[Project_ID] = @id AND LOWER(poly.TypeDescription) = @aquatic), " +
                                   "[StreamMiles] = @stream, " +
-                                  "[AffectedArea] = (SELECT SUM(poly.Shape.STArea()) FROM [WRI].[dbo].[POLY] poly where poly.[Project_ID] = @id AND LOWER(poly.TypeDescription) = @affected), " +
-                                  "[EasementAcquisitionAcres] = (SELECT SUM(poly.Shape.STArea()) FROM [WRI].[dbo].[POLY] poly where poly.[Project_ID] = @id AND LOWER(poly.TypeDescription) = @easement), " +
+                                  "[AffectedArea] = (SELECT SUM(poly.Shape.STArea()) FROM [dbo].[POLY] poly where poly.[Project_ID] = @id AND LOWER(poly.TypeDescription) = @affected), " +
+                                  "[EasementAcquisitionAcres] = (SELECT SUM(poly.Shape.STArea()) FROM [dbo].[POLY] poly where poly.[Project_ID] = @id AND LOWER(poly.TypeDescription) = @easement), " +
                                   "[Centroid] = (SELECT geometry::ConvexHullAggregate(polygons.shape).STCentroid() FROM " +
-                                  "(SELECT geometry::ConvexHullAggregate(poly.Shape) AS shape FROM [wri].[dbo].[POLY] poly WHERE poly.Project_ID = @id UNION ALL " +
-                                  "SELECT geometry::ConvexHullAggregate(line.Shape) FROM [wri].[dbo].[LINE] line WHERE line.Project_ID = @id UNION ALL " +
-                                  "SELECT geometry::ConvexHullAggregate(point.Shape) FROM [wri].[dbo].[POINT] point WHERE point.Project_ID = @id) polygons) " +
+                                  "(SELECT geometry::ConvexHullAggregate(poly.Shape) AS shape FROM [dbo].[POLY] poly WHERE poly.Project_ID = @id UNION ALL " +
+                                  "SELECT geometry::ConvexHullAggregate(line.Shape) FROM [dbo].[LINE] line WHERE line.Project_ID = @id UNION ALL " +
+                                  "SELECT geometry::ConvexHullAggregate(point.Shape) FROM [dbo].[POINT] point WHERE point.Project_ID = @id) polygons) " +
                                   "WHERE project.[Project_ID] = @id"
             },
             {
@@ -132,39 +132,39 @@ namespace wri_webapi.Configuration
             },
             {
                 "User", "SELECT TOP 1 FirstName + ' ' + LastName Name, user_group Role, user_id id " +
-                        "FROM [WRI].[dbo].[USERS] WHERE userKey = @key AND token = @token AND Active = 'YES'"
+                        "FROM [dbo].[USERS] WHERE userKey = @key AND token = @token AND Active = 'YES'"
             },
             {
                 "Contributor", "SELECT COUNT(c.User_FK) contributor " +
-                               "FROM [WRI].[dbo].[CONTRIBUTOR] c " +
+                               "FROM [dbo].[CONTRIBUTOR] c " +
                                "WHERE c.Project_FK = @id AND c.User_FK = @userId"
             },
             {
                 "Overlap", "SELECT SUM(CONVERT(INT, " +
                            "p.Shape.STIntersects(geometry::STGeomFromText(@wkt, 3857)))) " +
-                           "FROM [WRI].[dbo].[POLY] p " +
+                           "FROM [dbo].[POLY] p " +
                            "WHERE p.TypeDescription = @category AND p.Project_Id = @id"
             },
             {
-                "landOwnership", "INSERT INTO [WRI].[dbo].[LANDOWNER] " +
+                "landOwnership", "INSERT INTO [dbo].[LANDOWNER] " +
                                  "(FeatureID, FeatureClass, Owner, Admin, [Intersect]) " +
                                  "VALUES (@id, @featureClass, @owner, @admin, @intersect)"
             },
             {
-                "watershedRestoration_FocusAreas", "INSERT INTO [WRI].[dbo].[FOCUSAREA] " +
+                "watershedRestoration_FocusAreas", "INSERT INTO [dbo].[FOCUSAREA] " +
                                                    "(FeatureID, FeatureClass, Region, [Intersect]) " +
                                                    "VALUES (@id, @featureClass, @region, @intersect)"
             },
             {
-                "sageGrouseManagementAreas", "INSERT INTO [WRI].[dbo].[SGMA] " +
+                "sageGrouseManagementAreas", "INSERT INTO [dbo].[SGMA] " +
                                              "(FeatureID, FeatureClass, SGMA, [Intersect]) " +
                                              "VALUES (@id, @featureClass, @sgma, @intersect)"
             },
             {
-                "counties", "INSERT INTO [WRI].[dbo].[COUNTY] " +
+                "counties", "INSERT INTO [dbo].[COUNTY] " +
                             "(FeatureID, FeatureClass, County, [Intersect], County_ID) " +
                             "VALUES (@id, @featureClass, @county, @intersect, " +
-                            "(SELECT Code from [WRI].[dbo].[LU_COUNTY] WHERE LOWER(Value) = LOWER(@county)))"
+                            "(SELECT Code from [dbo].[LU_COUNTY] WHERE LOWER(Value) = LOWER(@county)))"
             }
         };
 
