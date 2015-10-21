@@ -161,6 +161,8 @@ namespace wri_soe
             if (geometry.GeometryType == esriGeometryType.esriGeometryPolygon)
             {
                 var filterGeometry = (ITopologicalOperator4) geometry;
+                filterGeometry.IsKnownSimple_2 = false;
+
                 filterGeometry.Simplify();
 
                 if (((IArea)geometry).Area < 0)
