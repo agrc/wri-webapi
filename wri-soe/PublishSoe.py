@@ -1,4 +1,5 @@
 import requests
+import secrets
 
 host = 'localhost'
 configuration = 'Debug'
@@ -15,8 +16,8 @@ start_service_url = 'http://{}:6080/arcgis/admin/services/{}.MapServer/start'.fo
 file_name = r'C:\Projects\GitHub\wri-webapi\wri-soe\bin\{}\wri-soe.soe'.format(
     configuration)
 
-data = {'username': '',
-        'password': '',
+data = {'username': secrets.username,
+        'password': secrets.password,
         'client': 'requestip',
         'f': 'json'}
 
