@@ -24,9 +24,9 @@ namespace wri_webapi
 {
     public class ProjectModule : NancyModule
     {
-        public ProjectModule(IQuery queries, IAttributeValidator validator)
+        public ProjectModule(IQuery queries, IAttributeValidator validator) : base("/project")
         {
-            Get["/project/{id:int}", true] = async (_, ctx) =>
+            Get["/{id:int}", true] = async (_, ctx) =>
             {
                 var id = int.Parse(_.id);
                 var model = this.Bind<UserDetailsRequest>();
@@ -42,6 +42,7 @@ namespace wri_webapi
 
                     var features = await queries.FeatureQueryAsync(connection, new {id});
                     response.Features = features;
+
                     var reason = "";
                     if (incompleteAttributes)
                     {
@@ -58,6 +59,12 @@ namespace wri_webapi
                     {
                         response.AllowEdits = false;
                         reason = "User is null. ";
+                    }
+
+                    else if (response.Project == null) 
+                    {
+                        response.AllowEdits = false;
+                        reason = "Project not found. ";
                     }
 
                     // anonymous and public users cannot create features
@@ -99,7 +106,7 @@ namespace wri_webapi
                 }
             };
 
-            Get["/project/{id:int}/feature/{featureId:int}", true] = async (_, ctx) =>
+            Get["/{id:int}/feature/{featureId:int}", true] = async (_, ctx) =>
             {
                 var featureId = int.Parse(_.featureId);
                 var featureCategory = (string)Request.Query.featureCategory;
@@ -150,7 +157,7 @@ namespace wri_webapi
                 return response;
             };
 
-            Post["/project/{id:int}/feature/create", true] = async (_, ctx) =>
+            Post["/{id:int}/feature/create", true] = async (_, ctx) =>
             {
                 var id = int.Parse(_.id);
                 var model = this.Bind<SaveFeatureRequest>();
@@ -296,20 +303,25 @@ namespace wri_webapi
                     }
 
                     // send geometry to soe for calculations
-                    var httpClient = new HttpClient();
+                    var httpClient = new HttpClient
+                    {
+                        Timeout = TimeSpan.FromMilliseconds(-1.0)
+                    };
                     var url = string.Format(
                         "http://{0}/Reference/MapServer/exts/wri_soe/ExtractIntersections",
                         Settings.Default.gisServerBaseUrl); 
                     
                     var uri = new Uri(url);
-                    var base64Geometry = Convert.ToBase64String(geometry.STAsBinary().Value); 
-                    var request = await httpClient.PostAsync(uri,
-                        new FormUrlEncodedContent(new[]
-                        {
-                            new KeyValuePair<string, string>("geometry", base64Geometry),
-                            new KeyValuePair<string, string>("criteria", JsonConvert.SerializeObject(criteria)),
-                            new KeyValuePair<string, string>("f", "json")
-                        }));
+                    var base64Geometry = Convert.ToBase64String(geometry.STAsBinary().Value);
+                    var formContent = new[]
+                                    {
+                                        new KeyValuePair<string, string>("geometry", base64Geometry),
+                                        new KeyValuePair<string, string>("criteria",
+                                            JsonConvert.SerializeObject(criteria)),
+                                        new KeyValuePair<string, string>("f", "json")
+                                    }.AsFormContent();
+
+                    var request = await httpClient.PostAsync(uri, formContent);
 
                     var soeResponse = await request.Content.ReadAsAsync<ResponseContainer<IntersectResponse>>(
                         new[]
@@ -327,28 +339,29 @@ namespace wri_webapi
 
                     var attributes = soeResponse.Result.Attributes;
                     int? primaryKey = null;
+
+                    FeatureActions[] actions;
+                    try
+                    {
+                        actions = JsonConvert.DeserializeObject<FeatureActions[]>(model.Actions);
+                    }
+                    catch (Exception ex)
+                    {
+                        return Negotiate.WithReasonPhrase("Feature Actions")
+                                     .WithStatusCode(HttpStatusCode.InternalServerError)
+                                     .WithModel("There was a problem deserializing the feature actions. " + ex.Message);
+                    }
+
+                    if (!validator.ValidAttributesFor(featureClass, model.Category, actions))
+                    {
+                        return Negotiate.WithReasonPhrase("Feature Actions")
+                                      .WithStatusCode(HttpStatusCode.InternalServerError)
+                                      .WithModel("The actions are not valid for the feature type.");
+                    }
+
                     // create transaction for new feature
                     using (var transaction = new TransactionScope(TransactionScopeAsyncFlowOption.Enabled))
                     {
-                        FeatureActions[] actions;
-                        try
-                        {
-                            actions = JsonConvert.DeserializeObject<FeatureActions[]>(model.Actions);
-                        }
-                        catch (Exception ex)
-                        {
-                            return Negotiate.WithReasonPhrase("Feature Actions")
-                                         .WithStatusCode(HttpStatusCode.InternalServerError)
-                                         .WithModel("There was a problem deserializing the feature actions. " + ex.Message);
-                        }
-
-                        if (!validator.ValidAttributesFor(featureClass, model.Category, actions))
-                        {
-                            return Negotiate.WithReasonPhrase("Feature Actions")
-                                          .WithStatusCode(HttpStatusCode.InternalServerError)
-                                          .WithModel("The actions are not valid for the feature type."); 
-                        }
-
                         switch (featureClass.ToLower())
                         {
                             case "poly":

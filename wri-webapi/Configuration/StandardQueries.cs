@@ -1,3 +1,4 @@
+using System;
 using System.Collections.Generic;
 using System.Configuration;
 using System.Data;
@@ -168,6 +169,12 @@ namespace wri_webapi.Configuration
                            "WHERE p.TypeDescription = @category AND p.Project_Id = @id"
             },
             {
+                "Overlap2", "SELECT SUM(CONVERT(INT, " +
+                           "p.Shape.STIntersects(@wkt))) " +
+                           "FROM [dbo].[POLY] p " +
+                           "WHERE p.TypeDescription = @category AND p.Project_Id = @id"
+            },
+            {
                 "landOwnership", "INSERT INTO [dbo].[LANDOWNER] " +
                                  "(FeatureID, FeatureClass, Owner, Admin, [Intersect]) " +
                                  "VALUES (@id, @featureClass, @owner, @admin, @intersect)"
@@ -229,7 +236,7 @@ namespace wri_webapi.Configuration
 
         public async Task<IEnumerable<int?>> OverlapQueryAsync(IDbConnection connection, object param = null)
         {
-            return await connection.QueryAsync<int?>(_sql["Overlap"], param);
+            return await connection.QueryAsync<int?>(_sql["Overlap2"], param);
         }
 
         public async Task<IEnumerable<int?>> FeatureClassQueryAsync(IDbConnection connection, string featureClass,
@@ -250,7 +257,7 @@ namespace wri_webapi.Configuration
 
         public async Task<int?> ExecuteAsync(IDbConnection connection, string type, object param = null)
         {
-            return await connection.ExecuteAsync(_sql[type], param);
+            return await connection.ExecuteAsync(_sql[type], param, null, 240);
         }
 
         public async Task<IEnumerable<RelatedDetails>> RelatedDataQueryAsync(IDbConnection connection,
