@@ -9,5 +9,6 @@ namespace wri_webapi.Models.Response
         public IEnumerable<RelatedDetails> LandOwnership { get; set; }
         public IEnumerable<RelatedDetails> FocusArea { get; set; }
         public IEnumerable<RelatedDetails> SageGrouse { get; set; }
+        public IEnumerable<RelatedDetails> Nhd { get; set; }
     }
 }

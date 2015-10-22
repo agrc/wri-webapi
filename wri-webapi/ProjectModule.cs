@@ -143,7 +143,8 @@ namespace wri_webapi
                     County = records.Where(x=>x.Origin == "county"),
                     FocusArea = records.Where(x=>x.Origin == "focus"),
                     SageGrouse = records.Where(x=>x.Origin == "sgma"),
-                    LandOwnership = records.Where(x=>x.Origin == "owner")
+                    LandOwnership = records.Where(x=>x.Origin == "owner"),
+                    Nhd = records.Where(x=>x.Origin == "nhd")
                 };
 
                 return response;
