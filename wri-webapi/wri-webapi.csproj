@@ -118,8 +118,6 @@
     <Compile Include="Configuration\StandardQueries.cs" />
     <Compile Include="Extensions\KeyValuePairExtensions.cs" />
     <Compile Include="Extensions\StringExtensions.cs" />
-    <Compile Include="HistoricalModule.cs" />
-    <Compile Include="IndexModule.cs" />
     <Compile Include="Lookup\FeatureCategoryToTable.cs" />
     <Compile Include="MediaTypes\TextPlainResponseFormatter.cs" />
     <Compile Include="Models\Database\Project.cs" />
@@ -127,13 +125,17 @@
     <Compile Include="Models\Database\SpatialFeature.cs" />
     <Compile Include="Models\Database\SpatialFeatureSimple.cs" />
     <Compile Include="Models\Database\User.cs" />
+    <Compile Include="Models\Request\SpecificFeatureRequest.cs" />
     <Compile Include="Models\Request\FeatureActions.cs" />
     <Compile Include="Models\Request\FeatureTreatments.cs" />
     <Compile Include="Models\Request\SaveFeatureRequest.cs" />
     <Compile Include="Models\Request\UserDetailsRequest.cs" />
     <Compile Include="Models\Response\SpatialFeatureResponse.cs" />
     <Compile Include="Models\Response\ProjectWithFeaturesResponse.cs" />
-    <Compile Include="ProjectModule.cs" />
+    <Compile Include="Modules\FeatureModule.cs" />
+    <Compile Include="Modules\HistoricalModule.cs" />
+    <Compile Include="Modules\IndexModule.cs" />
+    <Compile Include="Modules\ProjectModule.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
     <Compile Include="Properties\Settings.Designer.cs">
       <AutoGen>True</AutoGen>

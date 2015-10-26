@@ -1,10 +1,9 @@
-﻿using Nancy.Bootstrapper;
+﻿using Nancy;
+using Nancy.Bootstrapper;
 using Nancy.TinyIoc;
 
 namespace wri_webapi
 {
-    using Nancy;
-
     public class Bootstrapper : DefaultNancyBootstrapper
     {
         protected override void ApplicationStartup(TinyIoCContainer container, IPipelines pipelines)

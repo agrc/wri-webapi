@@ -1,7 +1,7 @@
-﻿namespace wri_webapi
-{
-    using Nancy;
+﻿using Nancy;
 
+namespace wri_webapi.Modules
+{
     public class IndexModule : NancyModule
     {
         public IndexModule()

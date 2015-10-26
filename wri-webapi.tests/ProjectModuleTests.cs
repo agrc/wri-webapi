@@ -2,6 +2,7 @@
 using Nancy.Testing;
 using NUnit.Framework;
 using wri_webapi.Models.Response;
+using wri_webapi.Modules;
 
 namespace wri_webapi.tests
 {
