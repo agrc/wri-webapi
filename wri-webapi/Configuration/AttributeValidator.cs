@@ -46,7 +46,7 @@ namespace wri_webapi.Configuration
                         return false;
                     }
 
-                    if (new[] {"guzzler", "trough", "fish passage structure"}.Contains(featureType))
+                    if (new[] {"guzzler", "fish passage structure"}.Contains(featureType))
                     {
                         return actions.All(x => !string.IsNullOrEmpty(x.Action) && 
                                                  !string.IsNullOrEmpty(x.Type));

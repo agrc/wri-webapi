@@ -111,6 +111,9 @@
     </Content>
   </ItemGroup>
   <ItemGroup>
+    <Compile Include="Actions\Delete.cs" />
+    <Compile Include="Actions\Create.cs" />
+    <Compile Include="Actions\Update.cs" />
     <Compile Include="Bootstrapper.cs" />
     <Compile Include="Configuration\AttributeValidator.cs" />
     <Compile Include="Configuration\IAttributeValidator.cs" />
@@ -126,6 +129,8 @@
     <Compile Include="Models\Database\SpatialFeatureSimple.cs" />
     <Compile Include="Models\Database\User.cs" />
     <Compile Include="Models\DTO\DatabaseConnection.cs" />
+    <Compile Include="Models\DTO\MessageWithStatus.cs" />
+    <Compile Include="Models\Request\EditSpecificFeatureRequest.cs" />
     <Compile Include="Models\Request\SpecificFeatureRequest.cs" />
     <Compile Include="Models\Request\FeatureActions.cs" />
     <Compile Include="Models\Request\FeatureTreatments.cs" />
@@ -143,6 +148,7 @@
       <DesignTimeSharedInput>True</DesignTimeSharedInput>
       <DependentUpon>Settings.settings</DependentUpon>
     </Compile>
+    <Compile Include="Services\ExtractReferenceDataService.cs" />
     <Compile Include="SqlServerTypes\Loader.cs" />
   </ItemGroup>
   <ItemGroup>

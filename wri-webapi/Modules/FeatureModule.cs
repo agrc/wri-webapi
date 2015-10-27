@@ -10,6 +10,7 @@ using Nancy;
 using Nancy.ModelBinding;
 using Newtonsoft.Json;
 using wri_shared.Models.Response;
+using wri_webapi.Actions;
 using wri_webapi.Configuration;
 using wri_webapi.Extensions;
 using wri_webapi.Lookup;
@@ -18,12 +19,13 @@ using wri_webapi.Models.Database;
 using wri_webapi.Models.Request;
 using wri_webapi.Models.Response;
 using wri_webapi.Properties;
+using wri_webapi.Services;
 
 namespace wri_webapi.Modules
 {
     public class FeatureModule : NancyModule
     {
-        public FeatureModule(IQuery queries, IAttributeValidator validator) : base("/project/{id:int}")
+        public FeatureModule(IQuery queries, IAttributeValidator validator, IIntersectionService intersectionService) : base("/project/{id:int}")
         {
             Get["/feature/{featureId:int}", true] = async (_, ctx) =>
             {
@@ -106,7 +108,9 @@ namespace wri_webapi.Modules
                 var ten = TimeSpan.FromSeconds(600);
 
                 var db = await queries.OpenConnection();
-                using (var transaction = new TransactionScope(TransactionScopeOption.RequiresNew, ten, TransactionScopeAsyncFlowOption.Enabled))
+                using (
+                    var transaction = new TransactionScope(TransactionScopeOption.RequiresNew, ten,
+                        TransactionScopeAsyncFlowOption.Enabled))
                 using (var connection = db.Connection)
                 {
                     if (!db.Open)
@@ -198,8 +202,9 @@ namespace wri_webapi.Modules
                         var counts = await queries.OverlapQueryAsync(connection, new
                         {
                             id,
-                            wkt = model.Geometry,
-                            category = model.Category
+                            wkt = geometry,
+                            category = model.Category,
+                            featureId = -1
                         });
                         var count = counts.FirstOrDefault();
 
@@ -212,47 +217,8 @@ namespace wri_webapi.Modules
                         }
                     }
 
-                    var criteria = new Dictionary<string, string[]>
-                    {
-                        {"0", new[] {"region"}}, // wri focus areas
-                        {"4", new[] {"owner", "admin"}}, // land ownership
-                        {"5", new[] {"area_name"}}, // sage grouse
-                        {"14", new[] {"name"}} // county
-                    };
-
-                    // include stream miles because it's aquatic
-                    if (model.Category.ToLower() == "aquatic/riparian treatment area")
-                    {
-                        criteria["15"] = new[] {"fcode_text"}; // nhd
-                    }
-
-                    // send geometry to soe for calculations
-                    var httpClient = new HttpClient
-                    {
-                        Timeout = TimeSpan.FromMilliseconds(-1.0)
-                    };
-                    var url = string.Format(
-                        "http://{0}/Reference/MapServer/exts/wri_soe/ExtractIntersections",
-                        Settings.Default.gisServerBaseUrl);
-
-                    var uri = new Uri(url);
-                    var base64Geometry = Convert.ToBase64String(geometry.STAsBinary().Value);
-                    var formContent = new[]
-                    {
-                        new KeyValuePair<string, string>("geometry", base64Geometry),
-                        new KeyValuePair<string, string>("criteria",
-                            JsonConvert.SerializeObject(criteria)),
-                        new KeyValuePair<string, string>("f", "json")
-                    }.AsFormContent();
-
-                    var request = await httpClient.PostAsync(uri, formContent);
-
-                    var soeResponse = await request.Content.ReadAsAsync<ResponseContainer<IntersectResponse>>(
-                        new[]
-                        {
-                            new TextPlainResponseFormatter()
-                        });
-
+                    var soeResponse = await intersectionService.QuerySoeAsync(geometry, model.Category);
+                    
                     // handle error from soe
                     if (!soeResponse.IsSuccessful)
                     {
@@ -261,7 +227,6 @@ namespace wri_webapi.Modules
                             .WithModel(soeResponse.Error.Message);
                     }
 
-                    var attributes = soeResponse.Result.Attributes;
                     int? primaryKey = null;
 
                     FeatureActions[] actions;
@@ -296,6 +261,7 @@ namespace wri_webapi.Modules
 
                             primaryKey = primaryKeys.FirstOrDefault();
 
+
                             if (!primaryKey.HasValue)
                             {
                                 return Negotiate.WithReasonPhrase("Database")
@@ -308,58 +274,12 @@ namespace wri_webapi.Modules
                                 break;
                             }
 
-                            foreach (var polyAction in actions)
+                            var actionsResult = await Create.Actions(connection, queries, primaryKey.Value, actions, table);
+                            if (!actionsResult.Successful)
                             {
-                                // insert top level action
-                                var actionIds = await queries.ActionQueryAsync(connection, new
-                                {
-                                    id = primaryKey,
-                                    action = polyAction.Action
-                                });
-
-                                var actionId = actionIds.FirstOrDefault();
-
-                                if (!actionId.HasValue)
-                                {
-                                    return Negotiate.WithStatusCode(HttpStatusCode.InternalServerError)
-                                        .WithReasonPhrase("Database")
-                                        .WithModel("Problem getting primary key from action insert.");
-                                }
-
-                                // insert second level treatment
-                                foreach (var treatment in polyAction.Treatments)
-                                {
-                                    var treatmentIds = await queries.TreatmentQueryAsync(connection, new
-                                    {
-                                        id = actionId,
-                                        treatment = treatment.Treatment
-                                    });
-
-                                    var treatmentId = treatmentIds.FirstOrDefault();
-
-                                    if (!treatmentId.HasValue)
-                                    {
-                                        return Negotiate.WithStatusCode(HttpStatusCode.InternalServerError)
-                                            .WithReasonPhrase("Database")
-                                            .WithModel("Problem getting primary key from treatment insert.");
-                                    }
-
-                                    // move on if no herbicides
-                                    if (treatment.Herbicides == null)
-                                    {
-                                        continue;
-                                    }
-
-                                    // insert third level herbicide
-                                    foreach (var herbicide in treatment.Herbicides)
-                                    {
-                                        await queries.ExecuteAsync(connection, "Herbicide", new
-                                        {
-                                            id = treatmentId,
-                                            herbicide
-                                        });
-                                    }
-                                }
+                                return Negotiate.WithReasonPhrase("Database")
+                                    .WithStatusCode(actionsResult.Status)
+                                    .WithModel(actionsResult.Message);
                             }
 
                             break;
@@ -394,85 +314,8 @@ namespace wri_webapi.Modules
                             break;
                     }
 
-                    // insert related tables
-                    if (attributes.ContainsKey("watershedRestoration_FocusAreas"))
-                    {
-                        var data = attributes["watershedRestoration_FocusAreas"].SelectMany(x => x.Attributes,
-                            (original, value) => new
-                            {
-                                intersect = original.Intersect,
-                                region = value,
-                                featureClass = table,
-                                id = primaryKey
-                            });
-
-                        await queries.ExecuteAsync(connection, "watershedRestoration_FocusAreas", data);
-                    }
-
-                    if (attributes.ContainsKey("landOwnership"))
-                    {
-                        var data = attributes["landOwnership"].Select(x => new
-                        {
-                            intersect = x.Intersect,
-                            owner = x.Attributes.First(),
-                            admin = x.Attributes.Last(),
-                            featureClass = table,
-                            id = primaryKey
-                        });
-
-                        await queries.ExecuteAsync(connection, "landOwnership", data);
-                    }
-
-                    if (attributes.ContainsKey("sageGrouseManagementAreas"))
-                    {
-                        var data = attributes["sageGrouseManagementAreas"].SelectMany(x => x.Attributes,
-                            (original, value) => new
-                            {
-                                intersect = original.Intersect,
-                                sgma = value,
-                                featureClass = table,
-                                id = primaryKey
-                            });
-
-                        await queries.ExecuteAsync(connection, "sageGrouseManagementAreas", data);
-                    }
-
-                    if (attributes.ContainsKey("counties"))
-                    {
-                        var data = attributes["counties"].SelectMany(x => x.Attributes, (original, value) => new
-                        {
-                            intersect = original.Intersect,
-                            county = value,
-                            featureClass = table,
-                            id = primaryKey
-                        });
-
-                        await queries.ExecuteAsync(connection, "counties", data);
-                    }
-
-                    if (attributes.ContainsKey("streamsNHDHighRes"))
-                    {
-                        var data = attributes["streamsNHDHighRes"].SelectMany(x => x.Attributes,
-                            (original, value) => new
-                            {
-                                id,
-                                featureId = primaryKey,
-                                intersect = original.Intersect,
-                                description = value
-                            });
-
-                        await queries.ExecuteAsync(connection, "streamsNHDHighRes", data);
-                    }
-
-                    // update project centroids and calculations
-                    await queries.ExecuteAsync(connection, "ProjectSpatial", new
-                    {
-                        id,
-                        terrestrial = "terrestrial treatment area",
-                        aquatic = "aquatic/riparian treatment area",
-                        affected = "affected area",
-                        easement = "easement/acquisition"
-                    });
+                    await Create.ExtractedGis(connection, queries, id, primaryKey.Value, soeResponse.Result.Attributes, table);
+                    await Update.ProjectStats(connection, queries, id);
 
                     transaction.Complete();
 
@@ -488,13 +331,215 @@ namespace wri_webapi.Modules
                             return
                                 Negotiate.WithModel(string.Format("Successfully created a new {0} stretching {1}.",
                                     model.Category,
-                                    geometry.STLength().Value.ToString(CultureInfo.CurrentCulture).InAcres()))
+                                    geometry.STLength().Value.ToString(CultureInfo.CurrentCulture).InFeet()))
                                     .WithHeader("FeatureId", primaryKey.ToString());
                     }
 
                     return Negotiate.WithModel(string.Format("Successfully created a new {0}.", model.Category))
                         .WithHeader("FeatureId", primaryKey.ToString());
                 }
+            };
+
+            Put["/feature/{featureId:int}", true] = async (_, ctx) =>
+            {
+                var model = this.Bind<EditSpecificFeatureRequest>();
+
+                // make sure feature type is valid
+                if (model.Category == null || !FeatureCategoryToTable.Contains(model.Category.ToLower()))
+                {
+                    return Negotiate.WithReasonPhrase("Incomplete request")
+                        .WithStatusCode(HttpStatusCode.BadRequest)
+                        .WithModel("Category not found.");
+                }
+
+                // make sure we have all the user information.
+                if (string.IsNullOrEmpty(model.Token) || string.IsNullOrEmpty(model.Key))
+                {
+                    return Negotiate.WithReasonPhrase("User not found")
+                        .WithStatusCode(HttpStatusCode.BadRequest)
+                        .WithModel("User not found.");
+                }
+
+                // make sure feature type is valid
+                if (!FeatureCategoryToTable.Contains(model.Category))
+                {
+                    return Negotiate.WithReasonPhrase("Incomplete request")
+                        .WithStatusCode(HttpStatusCode.BadRequest)
+                        .WithModel("Category not found.");
+                }
+
+                // get the database table to use
+                var table = FeatureCategoryToTable.GetTableFrom(model.Category);
+
+                var ten = TimeSpan.FromSeconds(600);
+
+                var db = await queries.OpenConnection();
+                using (
+                    var transaction = new TransactionScope(TransactionScopeOption.RequiresNew, ten,
+                        TransactionScopeAsyncFlowOption.Enabled))
+                using (var connection = db.Connection)
+                {
+                    if (!db.Open)
+                    {
+                        return Negotiate.WithReasonPhrase("Database Error")
+                            .WithStatusCode(HttpStatusCode.InternalServerError)
+                            .WithModel("Unable to connect to the database.");
+                    }
+
+                    var projects = await queries.ProjectMinimalQueryAsync(connection, new {model.Id});
+                    var project = projects.FirstOrDefault();
+
+                    // make sure project id is valid
+                    if (project == null)
+                    {
+                        return Negotiate.WithReasonPhrase("Project not found")
+                            .WithStatusCode(HttpStatusCode.BadRequest)
+                            .WithModel("Project not found.");
+                    }
+
+                    var users = await queries.UserQueryAsync(connection, new {key = model.Key, token = model.Token});
+                    var user = users.FirstOrDefault();
+
+                    // make sure user is valid
+                    if (user == null)
+                    {
+                        return Negotiate.WithReasonPhrase("User not found")
+                            .WithStatusCode(HttpStatusCode.BadRequest)
+                            .WithModel("User not found.");
+                    }
+
+                    // cancelled and completed projects cannot be edited
+                    if (new[] {"Cancelled", "Completed"}.Contains(project.Status) && user.Role != "GROUP_ADMIN")
+                    {
+                        return Negotiate.WithReasonPhrase("Project Status")
+                            .WithStatusCode(HttpStatusCode.PreconditionFailed)
+                            .WithModel("A cancelled or completed project cannot be modified.");
+                    }
+
+                    // anonymous and public users cannot create features
+                    if (new[] {"GROUP_ANONYMOUS", "GROUP_PUBLIC"}.Contains(user.Role))
+                    {
+                        return Negotiate.WithReasonPhrase("Role")
+                            .WithStatusCode(HttpStatusCode.Unauthorized)
+                            .WithModel("Project manager and contributors are only allowed to modify this project.");
+                    }
+
+                    // if project has features no or null, block feature creation
+                    if (project.Features == "No" && user.Role != "GROUP_ADMIN")
+                    {
+                        return Negotiate.WithReasonPhrase("Project settings")
+                            .WithStatusCode(HttpStatusCode.PreconditionFailed)
+                            .WithModel(
+                                "Project is marked to have no features. Therefore, features are not allowed to be created.");
+                    }
+
+                    // check if a user is a contributor
+                    if (project.ProjectManagerId != user.Id && user.Role != "GROUP_ADMIN")
+                    {
+                        var counts = await queries.ContributorQueryAsync(connection, new {model.Id, userId = user.Id});
+                        var count = counts.FirstOrDefault();
+
+                        if (count == 0)
+                        {
+                            return Negotiate.WithReasonPhrase("Not contributor")
+                                .WithStatusCode(HttpStatusCode.Unauthorized)
+                                .WithModel(
+                                    "You are not the project owner or a contributer. Therefore, you are not allowed to modify this project.");
+                        }
+                    }
+
+                    SqlGeometry geometry;
+                    try
+                    {
+                        geometry = SqlGeometry.Parse(model.Geometry);
+                        geometry.STSrid = 3857;
+                        geometry = geometry.MakeValid();
+                    }
+                    catch (Exception ex)
+                    {
+                        return Negotiate.WithReasonPhrase("Invalid geometry")
+                            .WithStatusCode(HttpStatusCode.BadRequest)
+                            .WithModel(ex.Message);
+                    }
+
+                    // check if polygons overlap
+                    if (table == "POLY")
+                    {
+                        var counts = await queries.OverlapQueryAsync(connection, new
+                        {
+                            model.Id,
+                            wkt = geometry,
+                            category = model.Category,
+                            featureId = model.FeatureId
+                        });
+                        var count = counts.FirstOrDefault();
+
+                        if (count.HasValue && count.Value > 0)
+                        {
+                            return Negotiate.WithReasonPhrase("Overlapping geometry")
+                                .WithStatusCode(HttpStatusCode.BadRequest)
+                                .WithModel(
+                                    "Overlapping features of the same type are not allowed. Add more actions to the existing feature.");
+                        }
+                    }
+
+                    var soeResponse = await intersectionService.QuerySoeAsync(geometry, model.Category);
+
+                    // handle error from soe
+                    if (!soeResponse.IsSuccessful)
+                    {
+                        return Negotiate.WithReasonPhrase(soeResponse.Error.Message)
+                            .WithStatusCode(HttpStatusCode.InternalServerError)
+                            .WithModel(soeResponse.Error.Message);
+                    }
+
+                    FeatureActions[] actions;
+                    try
+                    {
+                        actions = JsonConvert.DeserializeObject<FeatureActions[]>(model.Actions);
+                    }
+                    catch (Exception ex)
+                    {
+                        return Negotiate.WithReasonPhrase("Feature Actions")
+                            .WithStatusCode(HttpStatusCode.InternalServerError)
+                            .WithModel("There was a problem deserializing the feature actions. " + ex.Message);
+                    }
+
+                    if (!validator.ValidAttributesFor(table, model.Category, actions))
+                    {
+                        return Negotiate.WithReasonPhrase("Feature Actions")
+                            .WithStatusCode(HttpStatusCode.InternalServerError)
+                            .WithModel("The actions are not valid for the feature type.");
+                    }
+
+                    if (table == "POLY")
+                    {
+                        await Actions.Delete.Actions(connection, model.FeatureId);
+                        var actionsResult = await Create.Actions(connection, queries, model.FeatureId, actions, table);
+                        if (!actionsResult.Successful)
+                        {
+                            return Negotiate.WithReasonPhrase("Database")
+                                .WithStatusCode(actionsResult.Status)
+                                .WithModel(actionsResult.Message);
+                        }
+                    }
+
+                    var spatialResult = await Update.SpatialRow(connection, queries, model.FeatureId, actions, model.Retreatment, geometry, table);
+                    if (!spatialResult.Successful)
+                    {
+                        return Negotiate.WithReasonPhrase("Database")
+                            .WithStatusCode(spatialResult.Status)
+                            .WithModel(spatialResult.Message);
+                    }
+
+                    await Actions.Delete.ExtractedGis(connection, model.FeatureId, table);
+                    await Create.ExtractedGis(connection, queries, model.Id, model.FeatureId, soeResponse.Result.Attributes, table);
+                    await Update.ProjectStats(connection, queries, model.Id);
+
+                    transaction.Complete();
+                }
+
+                return Negotiate.WithStatusCode(HttpStatusCode.NoContent);
             };
 
             Delete["/feature/{featureId:int}", true] = async (_, ctx) =>
@@ -601,94 +646,14 @@ namespace wri_webapi.Modules
                         }
                     }
 
-
-                    switch (table.ToLower())
+                    if (table == "POLY")
                     {
-                        case "poly":
-                        {
-                            await connection.ExecuteAsync("DELETE FROM [dbo].[STREAM] " +
-                                                          "WHERE [FeatureID] = @featureId", new
-                                                          {
-                                                              model.FeatureId
-                                                          });
-
-                            var actions = await connection.QueryAsync<int>("SELECT [AreaActionId] " +
-                                                                           "FROM [dbo].[AREAACTION] WHERE " +
-                                                                           "[FeatureID] = @featureId", new
-                                                                           {
-                                                                               model.FeatureId
-                                                                           });
-                            actions = actions.ToList();
-
-                            if (!actions.Any())
-                            {
-                                break;
-                            }
-
-                            var treatments = await connection.QueryAsync<int>("SELECT [AreaTreatmentID] " +
-                                                                              "FROM [dbo].[AREATREATMENT] WHERE " +
-                                                                              "[AreaActionID] IN @actions", new
-                                                                              {
-                                                                                  actions
-                                                                              });
-
-                            treatments = treatments.ToList();
-
-                            if (!treatments.Any())
-                            {
-                                break;
-                            }
-
-                            await connection.ExecuteAsync("DELETE FROM [dbo].[AREAHERBICIDE] WHERE " +
-                                                          "[AreaTreatmentID] IN @treatments", new
-                                                          {
-                                                              treatments
-                                                          });
-
-                            await connection.ExecuteAsync("DELETE FROM [dbo].[AREATREATMENT] WHERE " +
-                                                          "[AreaTreatmentID] IN @treatments", new
-                                                          {
-                                                              treatments
-                                                          });
-
-                            await connection.ExecuteAsync("DELETE FROM [dbo].[AREAACTION] WHERE " +
-                                                          "[AreaActionID] IN @actions", new
-                                                          {
-                                                              actions
-                                                          });
-
-                            break;
-                        }
+                        await Actions.Delete.Actions(connection, model.FeatureId);
                     }
 
-                    foreach (var relatedTable in new[] {"FOCUSAREA", "COUNTY", "LANDOWNER", "SGMA"})
-                    {
-                        await connection.ExecuteAsync(string.Format("DELETE FROM [dbo].[{0}] ", relatedTable) +
-                                                      "WHERE [FeatureID] = @featureId AND " +
-                                                      "[FeatureClass] = @table", new
-                                                      {
-                                                          model.FeatureId,
-                                                          table
-                                                      });
-                    }
-
-                    await connection.ExecuteAsync(string.Format("DELETE FROM [dbo].[{0}] ", table) +
-                                                  "WHERE [FeatureID] = @featureId AND " +
-                                                  "LOWER([TypeDescription]) = @featureCategory", new
-                                                  {
-                                                      model.FeatureId,
-                                                      model.FeatureCategory
-                                                  });
-
-                    // update project centroids and calculations
-                    await queries.ExecuteAsync(connection, "ProjectSpatial", new
-                    {
-                        model.Id,
-                        terrestrial = "terrestrial treatment area",
-                        aquatic = "aquatic/riparian treatment area",
-                        affected = "affected area",
-                        easement = "easement/acquisition"
-                    });
+                    await Actions.Delete.ExtractedGis(connection, model.FeatureId, table);
+                    await Actions.Delete.SpatialFeature(connection, model.FeatureId, model.FeatureCategory, table);
+                    await Update.ProjectStats(connection, queries, model.Id);
 
                     transaction.Complete();
                 }

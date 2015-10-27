@@ -171,15 +171,9 @@ namespace wri_webapi.Configuration
             },
             {
                 "Overlap", "SELECT SUM(CONVERT(INT, " +
-                           "p.Shape.STIntersects(geometry::STGeomFromText(@wkt, 3857)))) " +
+                           "p.Shape.STIntersects(@wkt))) " +
                            "FROM [dbo].[POLY] p " +
-                           "WHERE p.TypeDescription = @category AND p.Project_Id = @id"
-            },
-            {
-                "Overlap2", "SELECT SUM(CONVERT(INT, " +
-                            "p.Shape.STIntersects(@wkt))) " +
-                            "FROM [dbo].[POLY] p " +
-                            "WHERE p.TypeDescription = @category AND p.Project_Id = @id"
+                           "WHERE p.TypeDescription = @category AND p.Project_Id = @id and p.FeatureID != @featureId"
             },
             {
                 "landOwnership", "INSERT INTO [dbo].[LANDOWNER] " +
@@ -253,7 +247,7 @@ namespace wri_webapi.Configuration
 
         public async Task<IEnumerable<int?>> OverlapQueryAsync(IDbConnection connection, object param = null)
         {
-            return await connection.QueryAsync<int?>(_sql["Overlap2"], param);
+            return await connection.QueryAsync<int?>(_sql["Overlap"], param);
         }
 
         public async Task<IEnumerable<int?>> FeatureClassQueryAsync(IDbConnection connection, string featureClass,

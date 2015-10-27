@@ -88,7 +88,6 @@ namespace wri_webapi.tests
         }
 
         [TestCase("POINT", "guzzler", Result = true)]
-        [TestCase("POINT", "trough", Result = true)]
         [TestCase("POINT", "fish passage structure", Result = true)]
         [TestCase("LINE", "fence", Result = true)]
         [TestCase("LINE", "pipeline", Result = true)]
@@ -125,6 +124,7 @@ namespace wri_webapi.tests
 
         [TestCase("POINT", "water control struture", Result = true)]
         [TestCase("POINT", "other point feature", Result = true)]
+        [TestCase("POINT", "trough", Result = true)]
         public bool ValidWithCommentsOnly(string table, string type)
         {
             var actions = new[]
@@ -140,6 +140,7 @@ namespace wri_webapi.tests
 
         [TestCase("POINT", "water control struture", Result = false)]
         [TestCase("POINT", "other point feature", Result = false)]
+        [TestCase("POINT", "trough", Result = false)]
         public bool InvalidWithoutComments(string table, string type)
         {
             var actions = new[]
