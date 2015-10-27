@@ -1,5 +1,4 @@
-﻿using System.Data.SqlClient;
-using System.Linq;
+﻿using System.Linq;
 using Nancy;
 using Nancy.ModelBinding;
 using wri_webapi.Configuration;
@@ -21,13 +20,10 @@ namespace wri_webapi.Modules
                 var incompleteAttributes = string.IsNullOrEmpty(model.Token) || string.IsNullOrEmpty(model.Key);
                 response.AllowEdits = !incompleteAttributes;
 
-                using (var connection = queries.OpenConnection())
+                var db = await queries.OpenConnection();
+                using (var connection = db.Connection)
                 {
-                    try
-                    {
-                        await connection.OpenAsync();
-                    }
-                    catch (SqlException)
+                    if (!db.Open)
                     {
                         return Negotiate.WithReasonPhrase("Database Error")
                             .WithStatusCode(HttpStatusCode.InternalServerError)

@@ -1,4 +1,3 @@
-using System;
 using System.Collections.Generic;
 using System.Configuration;
 using System.Data;
@@ -6,6 +5,7 @@ using System.Data.SqlClient;
 using System.Threading.Tasks;
 using Dapper;
 using wri_webapi.Models.Database;
+using wri_webapi.Models.DTO;
 
 namespace wri_webapi.Configuration
 {
@@ -109,26 +109,33 @@ namespace wri_webapi.Configuration
                             "pt.FeatureSubTypeDescription as subtype," +
                             "pt.ActionDescription as action," +
                             "pt.description," +
+                            "null as 'retreatment'," +
+                            "null as 'herbicide'," +
                             "pt.Shape.STNumPoints() as size " +
                             "FROM POINT pt WHERE pt.Project_ID = @id " +
-                            "UNION SELECT 'line' as origin," +
+                            "UNION ALL SELECT 'line' as origin," +
                             "l.FeatureID as id," +
                             "l.TypeDescription as type," +
                             "l.FeatureSubTypeDescription as subtype," +
                             "l.ActionDescription as action," +
                             "null as description," +
+                            "null as 'retreatment'," +
+                            "null as 'herbicide'," +
                             "l.Shape.STLength() as size " +
                             "FROM line L WHERE l.Project_ID = @id " +
-                            "UNION SELECT 'poly' as origin," +
+                            "UNION ALL SELECT 'poly' as origin," +
                             "p.FeatureID as featureId," +
                             "p.TypeDescription as type," +
                             "t.TreatmentTypeDescription as subtype," +
                             "a.ActionDescription as action," +
                             "null as description," +
+                            "CAST(p.Retreatment as bit)," +
+                            "h.HerbicideDescription as 'herbicide'," +
                             "p.Shape.STArea() as size " +
                             "FROM POLY p " +
                             "LEFT OUTER JOIN dbo.AreaACTION a ON p.FeatureID = a.FeatureId " +
                             "LEFT OUTER JOIN dbo.AreaTreatment t ON a.AreaActionId = t.AreaActionId " +
+                            "LEFT OUTER JOIN dbo.AREAHERBICIDE h on t.AreaTreatmentID = h.AreaTreatmentID " +
                             "WHERE Project_ID = @id"
             },
             {
@@ -170,9 +177,9 @@ namespace wri_webapi.Configuration
             },
             {
                 "Overlap2", "SELECT SUM(CONVERT(INT, " +
-                           "p.Shape.STIntersects(@wkt))) " +
-                           "FROM [dbo].[POLY] p " +
-                           "WHERE p.TypeDescription = @category AND p.Project_Id = @id"
+                            "p.Shape.STIntersects(@wkt))) " +
+                            "FROM [dbo].[POLY] p " +
+                            "WHERE p.TypeDescription = @category AND p.Project_Id = @id"
             },
             {
                 "landOwnership", "INSERT INTO [dbo].[LANDOWNER] " +
@@ -202,11 +209,21 @@ namespace wri_webapi.Configuration
             }
         };
 
-        public SqlConnection OpenConnection()
+        public async Task<DatabaseConnection> OpenConnection()
         {
-            var connectionString = ConfigurationManager.ConnectionStrings["db"].ConnectionString;
+            var open = true;
+            var connection = new SqlConnection(ConfigurationManager.ConnectionStrings["db"].ConnectionString);
 
-            return new SqlConnection(connectionString);
+            try
+            {
+                await connection.OpenAsync();
+            }
+            catch (SqlException)
+            {
+                open = false;
+            }
+
+            return await Task.Factory.StartNew(() => new DatabaseConnection(open, connection));
         }
 
         public async Task<IEnumerable<Project>> ProjectQueryAsync(IDbConnection connection, object param = null)

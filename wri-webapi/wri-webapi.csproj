@@ -125,6 +125,7 @@
     <Compile Include="Models\Database\SpatialFeature.cs" />
     <Compile Include="Models\Database\SpatialFeatureSimple.cs" />
     <Compile Include="Models\Database\User.cs" />
+    <Compile Include="Models\DTO\DatabaseConnection.cs" />
     <Compile Include="Models\Request\SpecificFeatureRequest.cs" />
     <Compile Include="Models\Request\FeatureActions.cs" />
     <Compile Include="Models\Request\FeatureTreatments.cs" />

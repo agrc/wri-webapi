@@ -1,7 +1,5 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.Configuration;
-using System.Data.SqlClient;
 using System.Globalization;
 using System.Linq;
 using System.Net.Http;
@@ -40,14 +38,11 @@ namespace wri_webapi.Modules
                 }
 
                 IEnumerable<RelatedDetails> records;
-
-                using (var connection = queries.OpenConnection())
+                
+                var db = await queries.OpenConnection();
+                using (var connection = db.Connection)
                 {
-                    try
-                    {
-                        await connection.OpenAsync();
-                    }
-                    catch (SqlException)
+                    if (!db.Open)
                     {
                         return Negotiate.WithReasonPhrase("Database Error")
                             .WithStatusCode(HttpStatusCode.InternalServerError)
@@ -108,14 +103,11 @@ namespace wri_webapi.Modules
                 // get the database table to use
                 var table = FeatureCategoryToTable.GetTableFrom(model.Category);
 
+                var db = await queries.OpenConnection();
                 using (var transaction = new TransactionScope(TransactionScopeAsyncFlowOption.Enabled))
-                using (var connection = queries.OpenConnection())
+                using (var connection = db.Connection)
                 {
-                    try
-                    {
-                        await connection.OpenAsync();
-                    }
-                    catch (SqlException)
+                    if (!db.Open)
                     {
                         return Negotiate.WithReasonPhrase("Database Error")
                             .WithStatusCode(HttpStatusCode.InternalServerError)
@@ -533,15 +525,12 @@ namespace wri_webapi.Modules
 
                 // get the database table to use
                 var table = FeatureCategoryToTable.GetTableFrom(model.FeatureCategory);
-
+                
+                var db = await queries.OpenConnection();
                 using (var transaction = new TransactionScope(TransactionScopeAsyncFlowOption.Enabled))
-                using (var connection = queries.OpenConnection())
+                using (var connection = db.Connection)
                 {
-                    try
-                    {
-                        await connection.OpenAsync();
-                    }
-                    catch (SqlException)
+                    if (!db.Open)
                     {
                         return Negotiate.WithReasonPhrase("Database Error")
                             .WithStatusCode(HttpStatusCode.InternalServerError)

@@ -1,7 +1,5 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.Configuration;
-using System.Data.SqlClient;
 using System.Linq;
 using System.Net.Http;
 using System.Transactions;
@@ -29,16 +27,13 @@ namespace wri_webapi.Modules
                     Timeout = TimeSpan.FromMilliseconds(-1.0)
                 };
 
+                var db = await queries.OpenConnection();
                 using (
                     var transaction = new TransactionScope(TransactionScopeOption.RequiresNew, TimeSpan.FromSeconds(120),
                         TransactionScopeAsyncFlowOption.Enabled))
-                using (var connection = queries.OpenConnection())
+                using (var connection = db.Connection)
                 {
-                    try
-                    {
-                        await connection.OpenAsync();
-                    }
-                    catch (SqlException)
+                    if (!db.Open)
                     {
                         return Negotiate.WithReasonPhrase("Database Error")
                             .WithStatusCode(HttpStatusCode.InternalServerError)

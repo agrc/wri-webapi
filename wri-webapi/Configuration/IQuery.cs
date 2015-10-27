@@ -1,14 +1,14 @@
 using System.Collections.Generic;
 using System.Data;
-using System.Data.SqlClient;
 using System.Threading.Tasks;
 using wri_webapi.Models.Database;
+using wri_webapi.Models.DTO;
 
 namespace wri_webapi.Configuration
 {
     public interface IQuery
     {
-        SqlConnection OpenConnection();
+        Task<DatabaseConnection> OpenConnection();
         Task<IEnumerable<Project>> ProjectQueryAsync(IDbConnection connection, object param = null);
         Task<IEnumerable<Project>> ProjectMinimalQueryAsync(IDbConnection connection, object param = null);
         Task<IEnumerable<SpatialFeature>> FeatureQueryAsync(IDbConnection connection, object param = null);

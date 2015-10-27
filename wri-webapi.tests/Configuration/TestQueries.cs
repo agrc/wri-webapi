@@ -6,14 +6,15 @@ using System.Data.SqlClient;
 using System.Threading.Tasks;
 using wri_webapi.Configuration;
 using wri_webapi.Models.Database;
+using wri_webapi.Models.DTO;
 
 namespace wri_webapi.tests.Configuration
 {
     public class TestQueries : IQuery
     {
-        public SqlConnection OpenConnection()
+        public async Task<DatabaseConnection> OpenConnection()
         {
-            return new SqlConnection("");
+            return await Task.Factory.StartNew(()=>new DatabaseConnection(true, null));
         }
 
         public async Task<IEnumerable<Project>> ProjectQueryAsync(IDbConnection connection, object param = null)

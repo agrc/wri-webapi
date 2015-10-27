@@ -1,4 +1,5 @@
-﻿using System.Collections.Generic;
+﻿using System;
+using System.Collections.Generic;
 using System.Linq;
 using wri_webapi.Models.Database;
 
@@ -15,16 +16,51 @@ namespace wri_webapi.Models.Response
             get { return _features; }
             set
             {
+                var items = new List<SpatialFeature>();
+
+                // combine herbicides
+                var herbicideDuplicates = value.GroupBy(x => x.FeatureId + " " + x.SubType + " " + x.Action);
+                foreach (var group in herbicideDuplicates)
+                {
+                    if (group.Count() > 1)
+                    {
+                        var dupe = group.First();
+                        dupe.Herbicides = group.Select(x => x.Herbicide).ToArray();
+                        dupe.Herbicide = null;
+                        items.Add(dupe);
+
+                        continue;
+                    }
+
+                    var item = group.First();
+                    if (!string.IsNullOrEmpty(item.Herbicide))
+                    {
+                        item.Herbicides = new[] {item.Herbicide};
+                        item.Herbicide = null;
+                    }
+
+                    items.Add(item);
+                }
+
                 // add unique id # to items
-                var items = value.OrderBy(x => x.FeatureId).Select((x, iter) => new SpatialFeature(x, iter)
+                items = items.OrderBy(x => x.FeatureId).Select((x, iter) => new SpatialFeature(x, iter)
                 {
                     HasChildren = false
                 }).ToList();
 
-                if (!items.Any(x => new[] {"terrestrial treatment area", "aquatic/riparian treatment area"}.Contains(x.Type.ToLower())))
+                try
                 {
-                    _features = items;
+                    if (!items.Any(x => new[]
+                    {
+                        "terrestrial treatment area",
+                        "aquatic/riparian treatment area"
+                    }.Contains(x.Type.ToLower())))
+                    {
+                        _features = items;
+                    }
                 }
+                catch(NullReferenceException)
+                { }
 
                 // If there are aquatic or terrestrial features that can have 1>* relationship
                 // format them for use in the grid
@@ -35,6 +71,7 @@ namespace wri_webapi.Models.Response
 
                     if (localGroup.Count() < 2)
                     {
+                        // if there are less than 2 items in a group they don't have children
                         foreach (var item in localGroup)
                         {
                             item.HasChildren = false;

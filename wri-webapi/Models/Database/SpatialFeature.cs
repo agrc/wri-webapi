@@ -1,4 +1,5 @@
-﻿using wri_webapi.Extensions;
+﻿using System.Collections.Generic;
+using wri_webapi.Extensions;
 
 namespace wri_webapi.Models.Database
 {
@@ -6,16 +7,17 @@ namespace wri_webapi.Models.Database
     {
         private string _size;
 
+        public SpatialFeature()
+        {
+            HasChildren = true;
+        }
+
+        // extra ctor to differentiate between other
         public SpatialFeature(SpatialFeature feature, int id, bool header)
         {
             Id = id;
             FeatureId = feature.FeatureId;
             Type = feature.Type;
-            HasChildren = true;
-        }
-
-        public SpatialFeature()
-        {
             HasChildren = true;
         }
 
@@ -31,6 +33,9 @@ namespace wri_webapi.Models.Database
             HasChildren = true;
             Size = feature.Size;
             Description = feature.Description;
+            Retreatment = feature.Retreatment;
+            Herbicide = feature.Herbicide;
+            Herbicides = feature.Herbicides;
         }
 
         // unique id for dstore
@@ -51,6 +56,8 @@ namespace wri_webapi.Models.Database
         public int? Parent { get; set; }
         // In the tree, if the item has children this is true
         public bool HasChildren { get; set; }
+        // boolean value if the polygon is a retreatment
+        public bool Retreatment { get; set; }
         // The area in sq/mi or length in ft of polygons and lines
         public string Size
         {
@@ -70,9 +77,12 @@ namespace wri_webapi.Models.Database
             }
             set { _size = value; }
         }
-
         // The description 
         public string Description { get; set; }
+        // The Herbicide name 
+        public string Herbicide { get; set; }
+        // the array of herbicides
+        public IEnumerable<string> Herbicides { get; set; }
 
         public override string ToString()
         {
