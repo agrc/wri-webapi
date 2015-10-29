@@ -29,7 +29,7 @@ namespace wri_webapi.Modules
 
                 var db = await queries.OpenConnection();
                 using (
-                    var transaction = new TransactionScope(TransactionScopeOption.RequiresNew, TimeSpan.FromSeconds(120),
+                    var transaction = new TransactionScope(TransactionScopeOption.RequiresNew, TimeSpan.FromSeconds(600),
                         TransactionScopeAsyncFlowOption.Enabled))
                 using (var connection = db.Connection)
                 {
