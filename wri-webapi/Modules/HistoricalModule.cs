@@ -27,10 +27,10 @@ namespace wri_webapi.Modules
                     Timeout = TimeSpan.FromMilliseconds(-1.0)
                 };
 
+                var ten = TimeSpan.FromSeconds(600);
+
                 var db = await queries.OpenConnection();
-                using (
-                    var transaction = new TransactionScope(TransactionScopeOption.RequiresNew, TimeSpan.FromSeconds(600),
-                        TransactionScopeAsyncFlowOption.Enabled))
+                using (var transaction = new TransactionScope(TransactionScopeOption.RequiresNew, ten, TransactionScopeAsyncFlowOption.Enabled))
                 using (var connection = db.Connection)
                 {
                     if (!db.Open)

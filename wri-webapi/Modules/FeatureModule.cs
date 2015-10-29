@@ -38,7 +38,7 @@ namespace wri_webapi.Modules
                 }
 
                 IEnumerable<RelatedDetails> records;
-                
+
                 var db = await queries.OpenConnection();
                 using (var connection = db.Connection)
                 {
@@ -103,8 +103,10 @@ namespace wri_webapi.Modules
                 // get the database table to use
                 var table = FeatureCategoryToTable.GetTableFrom(model.Category);
 
+                var ten = TimeSpan.FromSeconds(600);
+
                 var db = await queries.OpenConnection();
-                using (var transaction = new TransactionScope(TransactionScopeAsyncFlowOption.Enabled))
+                using (var transaction = new TransactionScope(TransactionScopeOption.RequiresNew, ten, TransactionScopeAsyncFlowOption.Enabled))
                 using (var connection = db.Connection)
                 {
                     if (!db.Open)
@@ -525,7 +527,7 @@ namespace wri_webapi.Modules
 
                 // get the database table to use
                 var table = FeatureCategoryToTable.GetTableFrom(model.FeatureCategory);
-                
+
                 var db = await queries.OpenConnection();
                 using (var transaction = new TransactionScope(TransactionScopeAsyncFlowOption.Enabled))
                 using (var connection = db.Connection)
