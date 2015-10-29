@@ -1,4 +1,5 @@
-﻿using wri_webapi.Extensions;
+﻿using System.Linq;
+using wri_webapi.Extensions;
 
 namespace wri_webapi.Models.Database
 {
@@ -13,14 +14,22 @@ namespace wri_webapi.Models.Database
         {
             get
             {
-                if (Table.ToLower() == "poly")
+                if (Origin.ToLower() == "nhd" && Table.ToLower() != "point")
                 {
-                    return _size.InAcres();
+                    return _size.InMiles();
                 }
 
-                if (Table.ToLower() == "line")
+                if (Origin.ToLower() != "nhd")
                 {
-                    return _size.InFeet();
+                    if (Table.ToLower() == "poly")
+                    {
+                        return _size.InAcres();
+                    }
+                    
+                    if (Table.ToLower() == "line")
+                    {
+                        return _size.InFeet();
+                    }
                 }
 
                 if (_size == "0")

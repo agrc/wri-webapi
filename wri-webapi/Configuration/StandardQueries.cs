@@ -158,7 +158,7 @@ namespace wri_webapi.Configuration
                                "UNION SELECT 'nhd' as origin, @table as [table], " +
                                "n.StreamDescription as name, null as extra, n.[Intersect] as [space] " +
                                "FROM STREAM n " +
-                               "WHERE n.FeatureID = @featureId"
+                               "WHERE n.FeatureID = @featureId AND @table = 'POLY'"
             },
             {
                 "User", "SELECT TOP 1 FirstName + ' ' + LastName Name, user_group Role, user_id id " +

@@ -69,6 +69,7 @@
   </ItemGroup>
   <ItemGroup>
     <Compile Include="Configuration\TestQueries.cs" />
+    <Compile Include="ExtensionTests.cs" />
     <Compile Include="ProjectModuleTests.cs" />
     <Compile Include="ProjectWithFeaturesModelTests.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />

@@ -14,7 +14,7 @@ namespace wri_webapi.Extensions
             try
             {
                 var meters = Convert.ToDouble(value);
-                return string.Format("{0:#,###0.####} mi²", Math.Round(meters * 0.0015625, 4));
+                return string.Format("{0:#,###0.####} ac", Math.Round(meters * 0.00024710538187021526, 4));
             }
             catch (Exception)
             {
@@ -22,6 +22,23 @@ namespace wri_webapi.Extensions
             }
         }
 
+        public static string InSquaredMiles(this string value)
+        {
+            if (Empty(value))
+            {
+                return null;
+            }
+
+            try
+            {
+                var meters = Convert.ToDouble(value);
+                return string.Format("{0:#,###0.####} mi²", Math.Round(meters * 0.00000038610214678498217, 4));
+            }
+            catch (Exception)
+            {
+                return value;
+            }
+        }
         public static string InMiles(this string value)
         {
             if (Empty(value))
@@ -32,7 +49,7 @@ namespace wri_webapi.Extensions
             try
             {
                 var meters = Convert.ToDouble(value);
-                return string.Format("{0:#,###0.####} mi", Math.Round(meters * 0.00062137, 4));
+                return string.Format("{0:#,###0.####} mi", Math.Round(meters * 0.00062137004149730017, 4));
             }
             catch (Exception)
             {
@@ -50,7 +67,7 @@ namespace wri_webapi.Extensions
             try
             {
                 var meters = Convert.ToDouble(value);
-                return string.Format("{0:#,###0.####} ft", Math.Round(meters * 3.2808, 4));
+                return string.Format("{0:#,###0.####} ft", Math.Round(meters * 3.2808333328119184, 4));
             }
             catch (Exception)
             {
