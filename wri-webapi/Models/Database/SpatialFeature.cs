@@ -19,6 +19,7 @@ namespace wri_webapi.Models.Database
             FeatureId = feature.FeatureId;
             Type = feature.Type;
             HasChildren = true;
+            Origin = feature.Origin;
         }
 
         public SpatialFeature(SpatialFeature feature, int id)
