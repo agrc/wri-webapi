@@ -26,7 +26,7 @@ namespace wri_webapi.Actions
         }
 
         public static async Task<MessageWithStatus> SpatialRow(IDbConnection connection, IQuery queries, int id,
-            FeatureActions[] actions, bool retreatment, SqlGeometry geometry, string table)
+            FeatureActions[] actions, char retreatment, SqlGeometry geometry, string table)
         {
             if (table == "POLY")
             {
@@ -36,7 +36,7 @@ namespace wri_webapi.Actions
                                               "WHERE [FeatureID] = @featureId", new
                                               {
                                                   shape = geometry,
-                                                  retreatment = retreatment ? '1' : '0',
+                                                  retreatment,
                                                   featureId = id
                                               });
 

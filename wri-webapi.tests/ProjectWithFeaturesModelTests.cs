@@ -74,7 +74,7 @@ namespace wri_webapi.tests
                     Type = "Terrestrial Treatment Area",
                     SubType = "Aerial (fixed-wing)",
                     Action = "Herbicide application",
-                    Retreatment = true,
+                    Retreatment = 'Y',
                     Herbicide = "2 4-D"
                 }, new SpatialFeature
                 {
@@ -82,7 +82,7 @@ namespace wri_webapi.tests
                     Type = "Terrestrial Treatment Area",
                     SubType = "Ely (2-way)",
                     Action = "Anchor chainb",
-                    Retreatment = true,
+                    Retreatment = 'Y',
                     Herbicide = null
                 }, new SpatialFeature
                 {
@@ -90,7 +90,7 @@ namespace wri_webapi.tests
                     Type = "Terrestrial Treatment Area",
                     SubType = "Aerial (fixed-wing)",
                     Action = "Herbicide application",
-                    Retreatment = false,
+                    Retreatment = 'N',
                     Herbicide = "Aquaneat"
                 }, new SpatialFeature
                 {
@@ -98,7 +98,7 @@ namespace wri_webapi.tests
                     Type = "Terrestrial Treatment Area",
                     SubType = "Aerial (fixed-wing)",
                     Action = "Herbicide application",
-                    Retreatment = false,
+                    Retreatment = 'N',
                     Herbicide = "Milestone"
                 }, new SpatialFeature
                 {
@@ -106,7 +106,7 @@ namespace wri_webapi.tests
                     Type = "Terrestrial Treatment Area",
                     SubType = "Aerial (helicopter)",
                     Action = "Herbicide application",
-                    Retreatment = false,
+                    Retreatment = 'N',
                     Herbicide = "Aquaneat"
                 }, new SpatialFeature
                 {
@@ -114,7 +114,7 @@ namespace wri_webapi.tests
                     Type = "Terrestrial Treatment Area",
                     SubType = "Aerial (fixed-wing)",
                     Action = "Herbicide application",
-                    Retreatment = false,
+                    Retreatment = 'N',
                     Herbicide = "Grazon P+D"
                 }, new SpatialFeature
                 {
@@ -122,7 +122,7 @@ namespace wri_webapi.tests
                     Type = "Terrestrial Treatment Area",
                     SubType = "Ground",
                     Action = "Herbicide application",
-                    Retreatment = false,
+                    Retreatment = 'N',
                     Herbicide = "Outpost 22k"
                 }, new SpatialFeature
                 {
@@ -130,7 +130,7 @@ namespace wri_webapi.tests
                     Type = "Terrestrial Treatment Area",
                     SubType = "Spot treatment",
                     Action = "Herbicide application",
-                    Retreatment = false,
+                    Retreatment = 'N',
                     Herbicide = "Pathfinder II"
                 }, new SpatialFeature
                 {

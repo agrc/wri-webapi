@@ -4,11 +4,11 @@ namespace wri_webapi.Models.Database
 {
     public class Project
     {
-        private string _terrestrialAcres;
+        private string _terrestrial;
         private string _affectedArea;
-        private string _aquaticAcres;
-        private string _easementAcres;
-        private string _streamMiles;
+        private string _aquatic;
+        private string _easement;
+        private string _stream;
         public int ProjectId { get; set; }
         public int ProjectManagerId { get; set; }
         public string ProjectManagerName { get; set; }
@@ -19,34 +19,34 @@ namespace wri_webapi.Models.Database
         public string Status { get; set; }
         public string Features { get; set; }
 
-        public string TerrestrialAcres
+        public string TerrestrialSqMeters
         {
-            get { return _terrestrialAcres.InAcres(); }
-            set { _terrestrialAcres = value; }
+            get { return _terrestrial.InAcres(); }
+            set { _terrestrial = value; }
         }
 
-        public string AffectedArea
+        public string AffectedAreaSqMeters
         {
             get { return _affectedArea.InAcres(); }
             set { _affectedArea = value; }
         }
 
-        public string AquaticAcres
+        public string AquaticSqMeters
         {
-            get { return _aquaticAcres.InAcres(); }
-            set { _aquaticAcres = value; }
+            get { return _aquatic.InAcres(); }
+            set { _aquatic = value; }
         }
 
-        public string EasementAcres
+        public string EasementSqMeters
         {
-            get { return _easementAcres.InAcres(); }
-            set { _easementAcres = value; }
+            get { return _easement.InAcres(); }
+            set { _easement = value; }
         }
 
-        public string StreamMiles
+        public string StreamLnMeters
         {
-            get { return _streamMiles.InMiles(); }
-            set { _streamMiles = value; }
+            get { return _stream.InMiles(); }
+            set { _stream = value; }
         }
 
     }

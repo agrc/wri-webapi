@@ -28,7 +28,7 @@ namespace wri_webapi.Configuration
             {
                 "POLY", "INSERT INTO [dbo].[POLY] " +
                         "(TypeDescription, Retreatment, Project_ID, Shape, " +
-                        "TypeCode, StatusDescription, StatusCode, AreaAcres) " +
+                        "TypeCode, StatusDescription, StatusCode, AreaSqMeters) " +
                         "VALUES (@featureType, @retreatment, @id, @shape, " +
                         "(SELECT [FeatureTypeID] FROM [dbo].[LU_FEATURETYPE] WHERE [FeatureTypeDescription] = @featureType)," +
                         "(SELECT [Status] FROM [dbo].[PROJECT] WHERE [Project_ID] = @id), " +
@@ -58,7 +58,7 @@ namespace wri_webapi.Configuration
             {
                 "LINE", "INSERT INTO [dbo].[LINE] " +
                         "([TypeDescription], [FeatureSubTypeDescription], [ActionDescription], [Description], [Shape], " +
-                        "[Project_ID], [TypeCode], [FeatureSubTypeID], [ActionID], [StatusDescription], [StatusCode], [LengthFeet]) " +
+                        "[Project_ID], [TypeCode], [FeatureSubTypeID], [ActionID], [StatusDescription], [StatusCode], [LengthLnMeters]) " +
                         "VALUES (@featureType, @subType, @action, @description, @shape, @id, " +
                         "(SELECT [FeatureTypeID] FROM [dbo].[LU_FEATURETYPE] WHERE [FeatureTypeDescription] = @featureType)," +
                         "(SELECT [FeatureSubTypeID] FROM [dbo].[LU_FEATURESUBTYPE] WHERE [FeatureSubTypeDescription] = @subType)," +
@@ -77,25 +77,25 @@ namespace wri_webapi.Configuration
                            "p.Status as status," +
                            "p.Description as description," +
                            "p.ProjRegion as region, " +
-                           "p.AffectedArea as affectedArea, " +
-                           "p.TerrestrialAcres as terrestrialAcres, " +
-                           "p.AqRipAcres as aquaticAcres, " +
-                           "p.EasementAcquisitionAcres as easementAcres, " +
-                           "p.StreamMiles as streamMiles " +
+                           "p.AffectedAreaSqMeters as AffectedAreaSqMeters, " +
+                           "p.TerrestrialSqMeters as TerrestrialSqMeters, " +
+                           "p.AqRipSqMeters as AquaticSqMeters, " +
+                           "p.EasementAcquisitionSqMeters as EasementSqMeters, " +
+                           "p.StreamLnMeters as StreamLnMeters " +
                            "FROM PROJECT p WHERE p.Project_ID = @id"
             },
             {
-                "ProjectMinimal",
-                "SELECT TOP 1 Project_ID projectid, ProjectManager_ID ProjectManagerId, Status, Features " +
-                "FROM [dbo].[PROJECT] WHERE Project_ID = @id"
+                "ProjectMinimal", "SELECT TOP 1 Project_ID as projectid, ProjectManager_ID as " +
+                                  "ProjectManagerId, Status, Features " +
+                                  "FROM [dbo].[PROJECT] WHERE Project_ID = @id"
             },
             {
                 "ProjectSpatial", "UPDATE [dbo].[PROJECT] " +
-                                  "SET [TerrestrialAcres] = (SELECT SUM(poly.Shape.STArea()) FROM [dbo].[POLY] poly where poly.[Project_ID] = @id AND poly.TypeDescription = @terrestrial), " +
-                                  "[AqRipAcres] = (SELECT SUM(poly.Shape.STArea()) FROM [dbo].[POLY] poly where poly.[Project_ID] = @id AND LOWER(poly.TypeDescription) = @aquatic), " +
-                                  "[StreamMiles] = (SELECT SUM([Intersect]) FROM [dbo].[STREAM] s WHERE s.[ProjectID] = @id), " +
-                                  "[AffectedArea] = (SELECT SUM(poly.Shape.STArea()) FROM [dbo].[POLY] poly where poly.[Project_ID] = @id AND LOWER(poly.TypeDescription) = @affected), " +
-                                  "[EasementAcquisitionAcres] = (SELECT SUM(poly.Shape.STArea()) FROM [dbo].[POLY] poly where poly.[Project_ID] = @id AND LOWER(poly.TypeDescription) = @easement), " +
+                                  "SET [TerrestrialSqMeters] = (SELECT SUM(poly.Shape.STArea()) FROM [dbo].[POLY] poly where poly.[Project_ID] = @id AND poly.TypeDescription = @terrestrial), " +
+                                  "[AqRipSqMeters] = (SELECT SUM(poly.Shape.STArea()) FROM [dbo].[POLY] poly where poly.[Project_ID] = @id AND LOWER(poly.TypeDescription) = @aquatic), " +
+                                  "[StreamLnMeters] = (SELECT SUM([Intersect]) FROM [dbo].[STREAM] s WHERE s.[ProjectID] = @id), " +
+                                  "[AffectedAreaSqMeters] = (SELECT SUM(poly.Shape.STArea()) FROM [dbo].[POLY] poly where poly.[Project_ID] = @id AND LOWER(poly.TypeDescription) = @affected), " +
+                                  "[EasementAcquisitionSqMeters] = (SELECT SUM(poly.Shape.STArea()) FROM [dbo].[POLY] poly where poly.[Project_ID] = @id AND LOWER(poly.TypeDescription) = @easement), " +
                                   "[Centroid] = (SELECT geometry::ConvexHullAggregate(polygons.shape).STCentroid() FROM " +
                                   "(SELECT geometry::ConvexHullAggregate(poly.Shape) AS shape FROM [dbo].[POLY] poly WHERE poly.Project_ID = @id UNION ALL " +
                                   "SELECT geometry::ConvexHullAggregate(line.Shape) FROM [dbo].[LINE] line WHERE line.Project_ID = @id UNION ALL " +
@@ -129,7 +129,7 @@ namespace wri_webapi.Configuration
                             "t.TreatmentTypeDescription as subtype," +
                             "a.ActionDescription as action," +
                             "null as description," +
-                            "CAST(p.Retreatment as bit)," +
+                            "p.Retreatment," +
                             "h.HerbicideDescription as 'herbicide'," +
                             "p.Shape.STArea() as size " +
                             "FROM POLY p " +
