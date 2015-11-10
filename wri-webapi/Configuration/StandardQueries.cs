@@ -77,11 +77,11 @@ namespace wri_webapi.Configuration
                            "p.Status as status," +
                            "p.Description as description," +
                            "p.ProjRegion as region, " +
-                           "p.AffectedArea as affectedArea, " +
-                           "p.TerrestrialAcres as terrestrialAcres, " +
-                           "p.AqRipAcres as aquaticAcres, " +
-                           "p.EasementAcquisitionAcres as easementAcres, " +
-                           "p.StreamMiles as streamMiles " +
+                           "p.AffectedAreaSqMeters as AffectedAreaSqMeters, " +
+                           "p.TerrestrialSqMeters as TerrestrialSqMeters, " +
+                           "p.AqRipSqMeters as aquaticAcres, " +
+                           "p.EasementAcquisitionSqMeters as easementAcres, " +
+                           "p.StreamLnMeters as StreamLnMeters " +
                            "FROM PROJECT p WHERE p.Project_ID = @id"
             },
             {
@@ -91,11 +91,11 @@ namespace wri_webapi.Configuration
             },
             {
                 "ProjectSpatial", "UPDATE [dbo].[PROJECT] " +
-                                  "SET [TerrestrialAcres] = (SELECT SUM(poly.Shape.STArea()) FROM [dbo].[POLY] poly where poly.[Project_ID] = @id AND poly.TypeDescription = @terrestrial), " +
-                                  "[AqRipAcres] = (SELECT SUM(poly.Shape.STArea()) FROM [dbo].[POLY] poly where poly.[Project_ID] = @id AND LOWER(poly.TypeDescription) = @aquatic), " +
-                                  "[StreamMiles] = (SELECT SUM([Intersect]) FROM [dbo].[STREAM] s WHERE s.[ProjectID] = @id), " +
-                                  "[AffectedArea] = (SELECT SUM(poly.Shape.STArea()) FROM [dbo].[POLY] poly where poly.[Project_ID] = @id AND LOWER(poly.TypeDescription) = @affected), " +
-                                  "[EasementAcquisitionAcres] = (SELECT SUM(poly.Shape.STArea()) FROM [dbo].[POLY] poly where poly.[Project_ID] = @id AND LOWER(poly.TypeDescription) = @easement), " +
+                                  "SET [TerrestrialSqMeters] = (SELECT SUM(poly.Shape.STArea()) FROM [dbo].[POLY] poly where poly.[Project_ID] = @id AND poly.TypeDescription = @terrestrial), " +
+                                  "[AqRipSqMeters] = (SELECT SUM(poly.Shape.STArea()) FROM [dbo].[POLY] poly where poly.[Project_ID] = @id AND LOWER(poly.TypeDescription) = @aquatic), " +
+                                  "[StreamLnMeters] = (SELECT SUM([Intersect]) FROM [dbo].[STREAM] s WHERE s.[ProjectID] = @id), " +
+                                  "[AffectedAreaSqMeters] = (SELECT SUM(poly.Shape.STArea()) FROM [dbo].[POLY] poly where poly.[Project_ID] = @id AND LOWER(poly.TypeDescription) = @affected), " +
+                                  "[EasementAcquisitionSqMeters] = (SELECT SUM(poly.Shape.STArea()) FROM [dbo].[POLY] poly where poly.[Project_ID] = @id AND LOWER(poly.TypeDescription) = @easement), " +
                                   "[Centroid] = (SELECT geometry::ConvexHullAggregate(polygons.shape).STCentroid() FROM " +
                                   "(SELECT geometry::ConvexHullAggregate(poly.Shape) AS shape FROM [dbo].[POLY] poly WHERE poly.Project_ID = @id UNION ALL " +
                                   "SELECT geometry::ConvexHullAggregate(line.Shape) FROM [dbo].[LINE] line WHERE line.Project_ID = @id UNION ALL " +
