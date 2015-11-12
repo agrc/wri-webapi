@@ -58,7 +58,7 @@ namespace wri_webapi.Models.Database
         // In the tree, if the item has children this is true
         public bool HasChildren { get; set; }
         // boolean value if the polygon is a retreatment
-        public bool Retreatment { get; set; }
+        public char? Retreatment { get; set; }
         // The area in sq/mi or length in ft of polygons and lines
         public string Size
         {

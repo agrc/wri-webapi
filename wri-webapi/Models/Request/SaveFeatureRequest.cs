@@ -9,6 +9,6 @@
         // the attributes json encoded  
         public string Actions { get; set; }
         // is the category a retreatment. not an action
-        public bool Retreatment { get; set; }
+        public char Retreatment { get; set; }
     }
 }

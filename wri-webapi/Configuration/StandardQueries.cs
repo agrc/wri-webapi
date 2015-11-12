@@ -85,7 +85,7 @@ namespace wri_webapi.Configuration
                            "FROM PROJECT p WHERE p.Project_ID = @id"
             },
             {
-                "ProjectMinimal", "SELECT TOP 1 Project_ID projectid, ProjectManager_ID, " +
+                "ProjectMinimal", "SELECT TOP 1 Project_ID as projectid, ProjectManager_ID as " +
                                   "ProjectManagerId, Status, Features " +
                                   "FROM [dbo].[PROJECT] WHERE Project_ID = @id"
             },
@@ -129,7 +129,7 @@ namespace wri_webapi.Configuration
                             "t.TreatmentTypeDescription as subtype," +
                             "a.ActionDescription as action," +
                             "null as description," +
-                            "CAST(p.Retreatment as bit)," +
+                            "p.Retreatment," +
                             "h.HerbicideDescription as 'herbicide'," +
                             "p.Shape.STArea() as size " +
                             "FROM POLY p " +
