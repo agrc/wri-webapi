@@ -72,6 +72,7 @@
     <Compile Include="Models\Response\IntersectAttributes.cs" />
     <Compile Include="Models\Response\IntersectResponse.cs" />
     <Compile Include="Models\Response\ResponseContainer.cs" />
+    <Compile Include="Models\Response\SizeResponse.cs" />
     <Compile Include="Models\Response\SoeErrorable.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
   </ItemGroup>

@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.Collections.Specialized;
+using System.Globalization;
 using System.Linq;
 using System.Net;
 using System.Runtime.InteropServices;
@@ -84,7 +85,13 @@ namespace wri_soe
                 new[] {"json"},
                 Extracthandler);
 
+            var areaLengthOperation = new RestOperation("AreasAndLengths",
+                new[] {"geometry"},
+                new[] {"json"},
+                AreasAndLengthsHandler);
+
             resource.operations.Add(operation);
+            resource.operations.Add(areaLengthOperation);
 
             return resource;
         }
@@ -100,6 +107,88 @@ namespace wri_soe
                 CreatedBy = "AGRC - Steve Gourley @steveAGRC",
                 Version
             }));
+        }
+
+        private byte[] AreasAndLengthsHandler(NameValueCollection boundVariables,
+            JsonObject operationInput,
+            string outputFormat,
+            string requesetProperties,
+            out string responseProperties)
+        {
+            responseProperties = null;
+            var errors = new ResponseContainer(HttpStatusCode.BadRequest, "");
+
+            string base64Geometry;
+            var found = operationInput.TryGetString("geometry", out base64Geometry);
+
+            if (!found || string.IsNullOrEmpty(base64Geometry))
+            {
+                errors.Message = "geometry parameter is required.";
+
+                return Json(errors);
+            }
+
+#if !DEBUG
+            _logger.LogMessage(ServerLogger.msgType.infoStandard, "AreasAndLengthsHandler", MessageCode, "Params received");
+#endif
+
+            IGeometry geometry;
+            int read;
+            var factory = new GeometryEnvironmentClass() as IGeometryFactory3;
+            factory.CreateGeometryFromWkbVariant(Convert.FromBase64String(base64Geometry), out geometry, out read);
+
+            var spatialReferenceFactory = new SpatialReferenceEnvironmentClass();
+            if (geometry.SpatialReference == null)
+            {
+                //Create a projected coordinate system and define its domain, resolution, and x,y tolerance.
+                var spatialReferenceResolution = spatialReferenceFactory.CreateProjectedCoordinateSystem(3857) as ISpatialReferenceResolution;
+                spatialReferenceResolution.ConstructFromHorizon();
+                var spatialReferenceTolerance = spatialReferenceResolution as ISpatialReferenceTolerance;
+                spatialReferenceTolerance.SetDefaultXYTolerance();
+                var spatialReference = spatialReferenceResolution as ISpatialReference;
+
+                geometry.SpatialReference = spatialReference;
+            }
+
+#if !DEBUG
+            _logger.LogMessage(ServerLogger.msgType.infoStandard, "AreasAndLengthsHandler", MessageCode, "Geometry converted");
+#endif
+
+            if (geometry.GeometryType == esriGeometryType.esriGeometryPolygon)
+            {
+                var filterGeometry = (ITopologicalOperator4)geometry;
+                filterGeometry.IsKnownSimple_2 = false;
+
+                filterGeometry.Simplify();
+
+                if (((IArea)geometry).Area < 0)
+                {
+                    ((ICurve)geometry).ReverseOrientation();
+                }
+            }
+
+            var utmResolution = spatialReferenceFactory.CreateProjectedCoordinateSystem(26912) as ISpatialReferenceResolution;
+            utmResolution.ConstructFromHorizon();
+            var utmTolerance = utmResolution as ISpatialReferenceTolerance;
+            utmTolerance.SetDefaultXYTolerance();
+            var utmSr = utmResolution as ISpatialReference;
+
+            geometry.Project(utmSr);
+
+            var size = 0D;
+            switch (geometry.GeometryType)
+            {
+                case esriGeometryType.esriGeometryPolygon:
+                    size = ((IArea) geometry).Area;
+                    break;
+                case esriGeometryType.esriGeometryPolyline:
+                    size = ((IPolyline5) geometry).Length;
+                    break;
+            }
+#if !DEBUG
+            _logger.LogMessage(ServerLogger.msgType.infoStandard, "AreasAndLengthsHandler", MessageCode, string.Format("Returning size {0}", size.ToString(CultureInfo.InvariantCulture)));
+#endif
+            return Json(new ResponseContainer<SizeResponse>(new SizeResponse(size)));
         }
 
         private byte[] Extracthandler(NameValueCollection boundVariables,
