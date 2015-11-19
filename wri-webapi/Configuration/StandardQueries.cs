@@ -35,7 +35,7 @@ namespace wri_webapi.Configuration
                         "(SELECT [ActionID] FROM [dbo].[LU_ACTION] WHERE [ActionDescription] = @action)," +
                         "(SELECT [Status] FROM [dbo].[PROJECT] WHERE [Project_ID] = @id)," +
                         "(SELECT [StatusID] FROM [dbo].[PROJECT] WHERE [Project_ID] = @id)," +
-                        "@shape.STLength()); " +
+                        "@size); " +
                         "SELECT CAST(SCOPE_IDENTITY() as int)"
             },
             {
@@ -46,7 +46,7 @@ namespace wri_webapi.Configuration
                         "(SELECT [FeatureTypeID] FROM [dbo].[LU_FEATURETYPE] WHERE [FeatureTypeDescription] = @featureType)," +
                         "(SELECT [Status] FROM [dbo].[PROJECT] WHERE [Project_ID] = @id), " +
                         "(SELECT [StatusID] FROM [dbo].[PROJECT] WHERE [Project_ID] = @id), " +
-                        "@shape.STArea());" +
+                        "@size);" +
                         "SELECT CAST(SCOPE_IDENTITY() as int)"
             },
             {

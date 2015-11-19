@@ -119,6 +119,7 @@
     <Compile Include="Configuration\IAttributeValidator.cs" />
     <Compile Include="Configuration\IQuery.cs" />
     <Compile Include="Configuration\StandardQueries.cs" />
+    <Compile Include="Extensions\DoubleExtensions.cs" />
     <Compile Include="Extensions\KeyValuePairExtensions.cs" />
     <Compile Include="Extensions\StringExtensions.cs" />
     <Compile Include="Lookup\FeatureCategoryToTable.cs" />
@@ -148,7 +149,8 @@
       <DesignTimeSharedInput>True</DesignTimeSharedInput>
       <DependentUpon>Settings.settings</DependentUpon>
     </Compile>
-    <Compile Include="Services\ExtractReferenceDataService.cs" />
+    <Compile Include="Services\ISoeService.cs" />
+    <Compile Include="Services\SoeService.cs" />
     <Compile Include="SqlServerTypes\Loader.cs" />
   </ItemGroup>
   <ItemGroup>

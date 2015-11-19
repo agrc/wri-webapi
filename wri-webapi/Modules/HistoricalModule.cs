@@ -1,31 +1,22 @@
 ﻿using System;
-using System.Collections.Generic;
 using System.Linq;
 using System.Net.Http;
 using System.Transactions;
 using Dapper;
 using Nancy;
-using Newtonsoft.Json;
-using wri_shared.Models.Response;
 using wri_webapi.Configuration;
-using wri_webapi.Extensions;
-using wri_webapi.MediaTypes;
 using wri_webapi.Models.Database;
-using wri_webapi.Properties;
+using wri_webapi.Services;
 
 namespace wri_webapi.Modules
 {
     public class HistoricalModule : NancyModule
     {
-        public HistoricalModule(IQuery queries) : base("/historical/project/{id:int}")
+        public HistoricalModule(IQuery queries, ISoeService soeService) : base("/historical/project/{id:int}")
         {
             Put["/create-related-data", true] = async (_, ctx) =>
             {
                 var id = int.Parse(_.id);
-                var httpClient = new HttpClient
-                {
-                    Timeout = TimeSpan.FromMilliseconds(-1.0)
-                };
 
                 var ten = TimeSpan.FromSeconds(600);
 
@@ -65,44 +56,39 @@ namespace wri_webapi.Modules
 
                         foreach (var feature in features)
                         {
-                            var criteria = new Dictionary<string, string[]>
-                            {
-                                {"0", new[] {"region"}}, // wri focus areas
-                                {"4", new[] {"owner", "admin"}}, // land ownership
-                                {"5", new[] {"area_name"}}, // sage grouse
-                                {"14", new[] {"name"}} // county
-                            };
+                            var soeAreaAndLengthResponse = await soeService.QueryAreasAndLengthsAsync(feature.Shape);
 
-                            // include stream miles because it's aquatic
-                            if (feature.Category.ToLower() == "aquatic/riparian treatment area")
+                            // handle error from soe
+                            if (!soeAreaAndLengthResponse.IsSuccessful)
                             {
-                                criteria["15"] = new[] {"fcode_text"}; // nhd
+                                return Negotiate.WithReasonPhrase(soeAreaAndLengthResponse.Error.Message)
+                                    .WithStatusCode(HttpStatusCode.InternalServerError)
+                                    .WithModel(soeAreaAndLengthResponse.Error.Message);
                             }
 
-                            // send geometry to soe for calculations
-                            var url = string.Format(
-                                "http://{0}/Reference/MapServer/exts/wri_soe/ExtractIntersections",
-                                Settings.Default.gisServerBaseUrl);
-
-                            var uri = new Uri(url);
-                            var base64Geometry = Convert.ToBase64String(feature.Shape.STAsBinary().Value);
-
-                            var formContent = new[]
+                            var size = soeAreaAndLengthResponse.Result.Size;
+                            if (table == "POLY")
                             {
-                                new KeyValuePair<string, string>("geometry", base64Geometry),
-                                new KeyValuePair<string, string>("criteria",
-                                    JsonConvert.SerializeObject(criteria)),
-                                new KeyValuePair<string, string>("f", "json")
-                            }.AsFormContent();
+                                await connection.ExecuteAsync("UPDATE [dbo].[POLY]" +
+                                                              "SET [AreaSqMeters] = @size " +
+                                                              "WHERE [FeatureID] = @featureId", new
+                                                              {
+                                                                  size,
+                                                                  featureId = feature.FeatureId
+                                                              });
+                            }
+                            else if (table == "LINE")
+                            {
+                                await connection.ExecuteAsync("UPDATE [dbo].[LINE]" +
+                                                              "SET [LengthLnMeters] = @size " +
+                                                              "WHERE [FeatureID] = @featureId", new
+                                                              {
+                                                                  size,
+                                                                  featureId = feature.FeatureId
+                                                              });
+                            }
 
-                            var request = await httpClient.PostAsync(uri, formContent);
-
-                            var soeResponse =
-                                await request.Content.ReadAsAsync<ResponseContainer<IntersectResponse>>(
-                                    new[]
-                                    {
-                                        new TextPlainResponseFormatter()
-                                    });
+                            var soeResponse = await soeService.QueryIntersectionsAsync(feature.Shape, feature.Category);
 
                             // handle error from soe
                             if (!soeResponse.IsSuccessful)

@@ -2,30 +2,25 @@
 using System.Collections.Generic;
 using System.Globalization;
 using System.Linq;
-using System.Net.Http;
 using System.Transactions;
-using Dapper;
 using Microsoft.SqlServer.Types;
 using Nancy;
 using Nancy.ModelBinding;
 using Newtonsoft.Json;
-using wri_shared.Models.Response;
 using wri_webapi.Actions;
 using wri_webapi.Configuration;
 using wri_webapi.Extensions;
 using wri_webapi.Lookup;
-using wri_webapi.MediaTypes;
 using wri_webapi.Models.Database;
 using wri_webapi.Models.Request;
 using wri_webapi.Models.Response;
-using wri_webapi.Properties;
 using wri_webapi.Services;
 
 namespace wri_webapi.Modules
 {
     public class FeatureModule : NancyModule
     {
-        public FeatureModule(IQuery queries, IAttributeValidator validator, IIntersectionService intersectionService) : base("/project/{id:int}")
+        public FeatureModule(IQuery queries, IAttributeValidator validator, ISoeService soeService) : base("/project/{id:int}")
         {
             Get["/feature/{featureId:int}", true] = async (_, ctx) =>
             {
@@ -206,25 +201,36 @@ namespace wri_webapi.Modules
                             category = model.Category,
                             featureId = -1
                         });
+
                         var count = counts.FirstOrDefault();
 
                         if (count.HasValue && count.Value > 0)
                         {
                             return Negotiate.WithReasonPhrase("Overlapping geometry")
                                 .WithStatusCode(HttpStatusCode.BadRequest)
-                                .WithModel(
-                                    "Overlapping features of the same type are not allowed. Add more actions to the existing feature.");
+                                .WithModel("Overlapping features of the same type are not allowed. " +
+                                           "Add more actions to the existing feature.");
                         }
                     }
 
-                    var soeResponse = await intersectionService.QuerySoeAsync(geometry, model.Category);
+                    var soeAreaAndLengthResponse = await soeService.QueryAreasAndLengthsAsync(geometry);
+
+                    // handle error from soe
+                    if (!soeAreaAndLengthResponse.IsSuccessful)
+                    {
+                        return Negotiate.WithReasonPhrase(soeAreaAndLengthResponse.Error.Message)
+                            .WithStatusCode(HttpStatusCode.InternalServerError)
+                            .WithModel(soeAreaAndLengthResponse.Error.Message);
+                    }
+
+                    var soeIntersectResponse = await soeService.QueryIntersectionsAsync(geometry, model.Category);
                     
                     // handle error from soe
-                    if (!soeResponse.IsSuccessful)
+                    if (!soeIntersectResponse.IsSuccessful)
                     {
-                        return Negotiate.WithReasonPhrase(soeResponse.Error.Message)
+                        return Negotiate.WithReasonPhrase(soeIntersectResponse.Error.Message)
                             .WithStatusCode(HttpStatusCode.InternalServerError)
-                            .WithModel(soeResponse.Error.Message);
+                            .WithModel(soeIntersectResponse.Error.Message);
                     }
 
                     int? primaryKey = null;
@@ -256,6 +262,7 @@ namespace wri_webapi.Modules
                                 featureType = model.Category,
                                 retreatment = model.Retreatment,
                                 shape = geometry,
+                                size = soeAreaAndLengthResponse.Result.Size,
                                 id
                             });
 
@@ -314,7 +321,7 @@ namespace wri_webapi.Modules
                             break;
                     }
 
-                    await Create.ExtractedGis(connection, queries, id, primaryKey.Value, soeResponse.Result.Attributes, table);
+                    await Create.ExtractedGis(connection, queries, id, primaryKey.Value, soeIntersectResponse.Result.Attributes, table);
                     await Update.ProjectStats(connection, queries, id);
 
                     transaction.Complete();
@@ -325,17 +332,19 @@ namespace wri_webapi.Modules
                             return
                                 Negotiate.WithModel(string.Format("Successfully created a new {0} covering {1}.",
                                     model.Category,
-                                    geometry.STArea().Value.ToString(CultureInfo.CurrentCulture).InAcres()))
+                                    soeAreaAndLengthResponse.Result.Size.InAcres()))
                                     .WithHeader("FeatureId", primaryKey.ToString());
                         case "line":
                             return
                                 Negotiate.WithModel(string.Format("Successfully created a new {0} stretching {1}.",
                                     model.Category,
-                                    geometry.STLength().Value.ToString(CultureInfo.CurrentCulture).InFeet()))
+                                    soeAreaAndLengthResponse.Result.Size.InFeet()))
                                     .WithHeader("FeatureId", primaryKey.ToString());
                     }
 
-                    return Negotiate.WithModel(string.Format("Successfully created a new {0}.", model.Category))
+                    var size = geometry.STNumPoints().Value;
+
+                    return Negotiate.WithModel(string.Format("Successfully created a new {0} in {1} location{2}.", model.Category, size, size > 1 ? "s" : ""))
                         .WithHeader("FeatureId", primaryKey.ToString());
                 }
             };
@@ -483,7 +492,17 @@ namespace wri_webapi.Modules
                         }
                     }
 
-                    var soeResponse = await intersectionService.QuerySoeAsync(geometry, model.Category);
+                    var soeAreaAndLengthResponse = await soeService.QueryAreasAndLengthsAsync(geometry);
+
+                    // handle error from soe
+                    if (!soeAreaAndLengthResponse.IsSuccessful)
+                    {
+                        return Negotiate.WithReasonPhrase(soeAreaAndLengthResponse.Error.Message)
+                            .WithStatusCode(HttpStatusCode.InternalServerError)
+                            .WithModel(soeAreaAndLengthResponse.Error.Message);
+                    }
+
+                    var soeResponse = await soeService.QueryIntersectionsAsync(geometry, model.Category);
 
                     // handle error from soe
                     if (!soeResponse.IsSuccessful)
@@ -524,7 +543,7 @@ namespace wri_webapi.Modules
                         }
                     }
 
-                    var spatialResult = await Update.SpatialRow(connection, queries, model.FeatureId, actions, model.Retreatment, geometry, table);
+                    var spatialResult = await Update.SpatialRow(connection, queries, model.FeatureId, actions, model.Retreatment, geometry, table, soeAreaAndLengthResponse.Result.Size);
                     if (!spatialResult.Successful)
                     {
                         return Negotiate.WithReasonPhrase("Database")

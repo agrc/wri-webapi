@@ -32,7 +32,7 @@ namespace wri_webapi.Models.Database
             Origin = feature.Origin;
             Parent = feature.Parent;
             HasChildren = true;
-            Size = feature.Size;
+            Size = feature._size;
             Description = feature.Description;
             Retreatment = feature.Retreatment;
             Herbicide = feature.Herbicide;

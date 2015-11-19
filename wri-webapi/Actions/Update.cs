@@ -26,18 +26,20 @@ namespace wri_webapi.Actions
         }
 
         public static async Task<MessageWithStatus> SpatialRow(IDbConnection connection, IQuery queries, int id,
-            FeatureActions[] actions, char retreatment, SqlGeometry geometry, string table)
+            FeatureActions[] actions, char retreatment, SqlGeometry geometry, string table, double size)
         {
             if (table == "POLY")
             {
                 await connection.ExecuteAsync("UPDATE [dbo].[POLY]" +
                                               "SET [Shape] = @shape," +
+                                              "[AreaSqMeters] = @size," +
                                               "[Retreatment] = @retreatment " +
                                               "WHERE [FeatureID] = @featureId", new
                                               {
                                                   shape = geometry,
                                                   retreatment,
-                                                  featureId = id
+                                                  featureId = id,
+                                                  size
                                               });
 
                 return await Task.Factory.StartNew(() => new MessageWithStatus
@@ -56,21 +58,44 @@ namespace wri_webapi.Actions
                 });
             }
 
-            await connection.ExecuteAsync(string.Format("UPDATE [dbo].[{0}]", table) +
-                                          "SET [FeatureSubTypeDescription] = @subtype," +
-                                          "[FeatureSubTypeID] = (SELECT [FeatureSubTypeID] FROM [dbo].[LU_FEATURESUBTYPE] WHERE [FeatureSubTypeDescription] = @subType)," +
-                                          "[ActionDescription] = @action," +
-                                          "[ActionID] = (SELECT [ActionID] FROM [dbo].[LU_ACTION] WHERE [ActionDescription] = @action)," +
-                                          "[Description] = @description," +
-                                          "[Shape] = @shape " +
-                                          "WHERE [FeatureID] = @featureId", new
-                                          {
-                                              subType = action.Type,
-                                              action = action.Action,
-                                              shape = geometry,
-                                              description = action.Description,
-                                              featureId = id
-                                          });
+            if (table == "LINE")
+            {
+                await connection.ExecuteAsync(string.Format("UPDATE [dbo].[{0}]", table) +
+                                              "SET [FeatureSubTypeDescription] = @subtype," +
+                                              "[FeatureSubTypeID] = (SELECT [FeatureSubTypeID] FROM [dbo].[LU_FEATURESUBTYPE] WHERE [FeatureSubTypeDescription] = @subType)," +
+                                              "[ActionDescription] = @action," +
+                                              "[ActionID] = (SELECT [ActionID] FROM [dbo].[LU_ACTION] WHERE [ActionDescription] = @action)," +
+                                              "[Description] = @description," +
+                                              "[LengthLnMeters] = @size," +
+                                              "[Shape] = @shape " +
+                                              "WHERE [FeatureID] = @featureId", new
+                                              {
+                                                  subType = action.Type,
+                                                  action = action.Action,
+                                                  shape = geometry,
+                                                  size,
+                                                  description = action.Description,
+                                                  featureId = id
+                                              });
+            }
+            else
+            {
+                await connection.ExecuteAsync(string.Format("UPDATE [dbo].[{0}]", table) +
+                                               "SET [FeatureSubTypeDescription] = @subtype," +
+                                               "[FeatureSubTypeID] = (SELECT [FeatureSubTypeID] FROM [dbo].[LU_FEATURESUBTYPE] WHERE [FeatureSubTypeDescription] = @subType)," +
+                                               "[ActionDescription] = @action," +
+                                               "[ActionID] = (SELECT [ActionID] FROM [dbo].[LU_ACTION] WHERE [ActionDescription] = @action)," +
+                                               "[Description] = @description," +
+                                               "[Shape] = @shape " +
+                                               "WHERE [FeatureID] = @featureId", new
+                                               {
+                                                   subType = action.Type,
+                                                   action = action.Action,
+                                                   shape = geometry,
+                                                   description = action.Description,
+                                                   featureId = id
+                                               }); 
+            }
 
             return await Task.Factory.StartNew(() => new MessageWithStatus()
             {
