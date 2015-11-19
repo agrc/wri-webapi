@@ -140,10 +140,9 @@ namespace wri_soe
             var factory = new GeometryEnvironmentClass() as IGeometryFactory3;
             factory.CreateGeometryFromWkbVariant(Convert.FromBase64String(base64Geometry), out geometry, out read);
 
+            var spatialReferenceFactory = new SpatialReferenceEnvironmentClass();
             if (geometry.SpatialReference == null)
             {
-                var spatialReferenceFactory = new SpatialReferenceEnvironmentClass();
-
                 //Create a projected coordinate system and define its domain, resolution, and x,y tolerance.
                 var spatialReferenceResolution = spatialReferenceFactory.CreateProjectedCoordinateSystem(3857) as ISpatialReferenceResolution;
                 spatialReferenceResolution.ConstructFromHorizon();
@@ -177,6 +176,12 @@ namespace wri_soe
                 SpatialRel = esriSpatialRelEnum.esriSpatialRelIntersects
             };
 
+            var utmResolution = spatialReferenceFactory.CreateProjectedCoordinateSystem(26912) as ISpatialReferenceResolution;
+            utmResolution.ConstructFromHorizon();
+            var utmTolerance = utmResolution as ISpatialReferenceTolerance;
+            utmTolerance.SetDefaultXYTolerance();
+            var utmSr = utmResolution as ISpatialReference;
+
             var notEsri = JsonConvert.DeserializeObject<Dictionary<string, string[]>>(queryCriteria.ToJson());
             var searchResults = new Dictionary<string, IList<IntersectAttributes>>();
 
@@ -187,11 +192,9 @@ namespace wri_soe
                 var fieldMap = container.FieldMap.Select(x => x.Value)
                     .Where(y => fields.Contains(y.Field.ToUpper()))
                     .ToList();
-
 #if !DEBUG
                 _logger.LogMessage(ServerLogger.msgType.infoStandard, "Extracthandler", MessageCode, string.Format("Querying {0} at index {1}", container.LayerName, container.Index));
 #endif
-
                 var cursor = container.FeatureClass.Search(filter, true);
                 IFeature feature;
                 while ((feature = cursor.NextFeature()) != null)
@@ -216,12 +219,14 @@ namespace wri_soe
                             {
                                 try
                                 {
-                                    var intersection =
-                                        (IArea) gis.Intersect(feature.ShapeCopy, esriGeometryDimension.esriGeometry2Dimension);
+                                    var intersection = gis.Intersect(feature.ShapeCopy, esriGeometryDimension.esriGeometry2Dimension);
 
-                                    attributes.Intersect = Math.Abs(intersection.Area);
+                                    intersection.Project(utmSr);
+
+                                    var utm = (IArea) intersection;
+                                    attributes.Intersect = Math.Abs(utm.Area);
 #if !DEBUG
-                                    _logger.LogMessage(ServerLogger.msgType.infoStandard, "Extracthandler", MessageCode, string.Format("Area: {0}", intersection.Area));
+                                    _logger.LogMessage(ServerLogger.msgType.infoStandard, "Extracthandler", MessageCode, string.Format("Area: {0}", utm.Area));
 #endif
                                 }
                                 catch (Exception ex)
@@ -231,14 +236,15 @@ namespace wri_soe
                             }
                             else if (feature.ShapeCopy.GeometryType == esriGeometryType.esriGeometryPolyline)
                             {
+                                var intersection = gis.Intersect(feature.ShapeCopy, esriGeometryDimension.esriGeometry1Dimension);
 
-                                var intersection = (IPolyline5)gis.Intersect(feature.ShapeCopy, esriGeometryDimension.esriGeometry1Dimension);
+                                intersection.Project(utmSr);
 
+                                var utm = (IPolyline5) intersection;
+                                attributes.Intersect = Math.Abs(utm.Length);
 #if !DEBUG
-                                _logger.LogMessage(ServerLogger.msgType.infoStandard, "Extracthandler", MessageCode, string.Format("Length: {0}", intersection.Length));
+                                _logger.LogMessage(ServerLogger.msgType.infoStandard, "Extracthandler", MessageCode, string.Format("Length: {0}", utm.Length));
 #endif
-
-                                attributes.Intersect = Math.Abs(intersection.Length);
                             }
 
                         }
@@ -248,17 +254,18 @@ namespace wri_soe
 #if !DEBUG
                             _logger.LogMessage(ServerLogger.msgType.infoStandard, "Extracthandler", MessageCode, "User input polyline, acting on " + container.LayerName);
 #endif
-
                             var gis = (ITopologicalOperator5) geometry;
                             gis.Simplify();
 
-                            var intersection = (IPolyline) gis.Intersect(feature.ShapeCopy, esriGeometryDimension.esriGeometry1Dimension);
+                            var intersection = gis.Intersect(feature.ShapeCopy, esriGeometryDimension.esriGeometry1Dimension);
 
+                            intersection.Project(utmSr);
+
+                            var utm = (IPolyline) intersection;
+                            attributes.Intersect = Math.Abs(utm.Length);
 #if !DEBUG
-                            _logger.LogMessage(ServerLogger.msgType.infoStandard, "Extracthandler", MessageCode, string.Format("Length: {0}", intersection.Length));
+                            _logger.LogMessage(ServerLogger.msgType.infoStandard, "Extracthandler", MessageCode, string.Format("Length: {0}", utm.Length));
 #endif
-
-                            attributes.Intersect = Math.Abs(intersection.Length);
                         }
                             break;
                     }
