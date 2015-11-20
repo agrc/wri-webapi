@@ -74,7 +74,7 @@ namespace wri_webapi.Models.Database
                     return _size.InFeet();
                 }
 
-                return _size;
+                return _size.AsPoint();
             }
             set { _size = value; }
         }

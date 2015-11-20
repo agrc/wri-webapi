@@ -1,5 +1,4 @@
-﻿using System.Linq;
-using wri_webapi.Extensions;
+﻿using wri_webapi.Extensions;
 
 namespace wri_webapi.Models.Database
 {
@@ -32,9 +31,9 @@ namespace wri_webapi.Models.Database
                     }
                 }
 
-                if (_size == "0")
+                if (Table.ToLower() == "point")
                 {
-                    return null;
+                    return _size.AsPoint();
                 }
 
                 return _size;

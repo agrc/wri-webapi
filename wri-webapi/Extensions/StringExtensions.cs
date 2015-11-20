@@ -75,6 +75,24 @@ namespace wri_webapi.Extensions
             } 
         }
 
+        public static string AsPoint(this string value)
+        {
+            if (Empty(value))
+            {
+                return null;
+            }
+
+            try
+            {
+                var count = Convert.ToDouble(value);
+                return string.Format("{0:#,###0}", count);
+            }
+            catch (Exception)
+            {
+                return value;
+            }  
+        }
+
         private static bool Empty(string value)
         {
             if (string.IsNullOrEmpty(value) || value.StartsWith("0.0000"))

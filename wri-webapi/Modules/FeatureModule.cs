@@ -1,6 +1,5 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.Globalization;
 using System.Linq;
 using System.Transactions;
 using Microsoft.SqlServer.Types;
@@ -300,12 +299,15 @@ namespace wri_webapi.Modules
                                     .WithModel("Could not find action attributes.");
                             }
 
+                            var size = soeAreaAndLengthResponse.Result.Size > 0 ? soeAreaAndLengthResponse.Result.Size : (double?)null;
+
                             primaryKeys = await queries.FeatureClassQueryAsync(connection, table, new
                             {
                                 featureType = model.Category,
                                 subType = action.Type,
                                 action = action.Action,
                                 description = action.Description,
+                                size,
                                 id,
                                 shape = geometry
                             });
@@ -342,9 +344,9 @@ namespace wri_webapi.Modules
                                     .WithHeader("FeatureId", primaryKey.ToString());
                     }
 
-                    var size = geometry.STNumPoints().Value;
+                    var pointCount = geometry.STNumPoints().Value;
 
-                    return Negotiate.WithModel(string.Format("Successfully created a new {0} in {1} location{2}.", model.Category, size, size > 1 ? "s" : ""))
+                    return Negotiate.WithModel(string.Format("Successfully created a new {0} in {1} location{2}.", model.Category, pointCount, pointCount > 1 ? "s" : ""))
                         .WithHeader("FeatureId", primaryKey.ToString());
                 }
             };
