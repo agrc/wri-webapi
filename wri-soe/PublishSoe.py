@@ -13,7 +13,7 @@ upload_url = 'http://{}:6080/arcgis/admin/uploads/upload?token={}'.format(
 start_service_url = 'http://{}:6080/arcgis/admin/services/{}.MapServer/start'.format(
     host, service_name)
 
-file_name = r'C:\Projects\GitHub\wri-webapi\wri-soe\bin\{}\wri-soe.soe'.format(
+file_name = r'.\bin\{}\wri-soe.soe'.format(
     configuration)
 
 data = {'username': secrets.username,
