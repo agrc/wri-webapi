@@ -98,8 +98,8 @@ namespace wri_webapi.Configuration
                                   "[EasementAcquisitionSqMeters] = (SELECT SUM(poly.AreaSqMeters) FROM [dbo].[POLY] poly where poly.[Project_ID] = @id AND LOWER(poly.TypeDescription) = @easement), " +
                                   "[Centroid] = (SELECT geometry::ConvexHullAggregate(polygons.shape).STCentroid() FROM " +
                                   "(SELECT geometry::ConvexHullAggregate(poly.Shape) AS shape FROM [dbo].[POLY] poly WHERE poly.Project_ID = @id UNION ALL " +
-                                  "SELECT geometry::ConvexHullAggregate(line.Shape) FROM [dbo].[LINE] line WHERE line.Project_ID = @id UNION ALL " +
-                                  "SELECT geometry::ConvexHullAggregate(point.Shape) FROM [dbo].[POINT] point WHERE point.Project_ID = @id) polygons) " +
+                                  "SELECT geometry::EnvelopeAggregate(line.Shape) FROM [dbo].[LINE] line WHERE line.Project_ID = @id UNION ALL " +
+                                  "SELECT geometry::EnvelopeAggregate(point.Shape) FROM [dbo].[POINT] point WHERE point.Project_ID = @id) polygons) " +
                                   "WHERE project.[Project_ID] = @id"
             },
             {
