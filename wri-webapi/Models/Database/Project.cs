@@ -9,6 +9,10 @@ namespace wri_webapi.Models.Database
         private string _aquatic;
         private string _easement;
         private string _stream;
+        private string _county;
+        private string _sgma;
+        private string _focus;
+        private string _landown;
         public int ProjectId { get; set; }
         public int ProjectManagerId { get; set; }
         public string ProjectManagerName { get; set; }
@@ -49,5 +53,28 @@ namespace wri_webapi.Models.Database
             set { _stream = value; }
         }
 
+        public string CountySqMeters
+        {
+            get { return _county.InAcres(); }
+            set { _county = value; }
+        }
+
+        public string FocusSqMeters
+        {
+            get { return _focus.InAcres(); }
+            set { _focus = value; }
+        }
+        
+        public string SgmaSqMeters
+        {
+            get { return _sgma.InAcres(); }
+            set { _sgma = value; }
+        }
+
+        public string LandOwnerSqMeters
+        {
+            get { return _landown.InAcres(); }
+            set { _landown = value; }
+        }
     }
 }
