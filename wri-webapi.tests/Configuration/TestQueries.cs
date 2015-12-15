@@ -17,7 +17,7 @@ namespace wri_webapi.tests.Configuration
             return await Task.Factory.StartNew(()=>new DatabaseConnection(true, null));
         }
 
-        public async Task<IEnumerable<Project>> ProjectQueryAsync(IDbConnection connection, object param = null)
+        public async Task<Project> ProjectQueryAsync(IDbConnection connection, object param = null)
         {
             var p = AnonymousObjectToDictionary(param);
 
@@ -46,7 +46,7 @@ namespace wri_webapi.tests.Configuration
                     break;
             }
 
-            return await Task.Factory.StartNew(() => new[] {project});
+            return await Task.Factory.StartNew(() =>  project);
         }
 
         public Task<IEnumerable<Project>> ProjectMinimalQueryAsync(IDbConnection connection, object param = null)

@@ -2,6 +2,7 @@ using System.Collections.Generic;
 using System.Configuration;
 using System.Data;
 using System.Data.SqlClient;
+using System.Linq;
 using System.Threading.Tasks;
 using Dapper;
 using wri_webapi.Models.Database;
@@ -81,8 +82,16 @@ namespace wri_webapi.Configuration
                            "p.TerrestrialSqMeters as TerrestrialSqMeters, " +
                            "p.AqRipSqMeters as AquaticSqMeters, " +
                            "p.EasementAcquisitionSqMeters as EasementSqMeters, " +
-                           "p.StreamLnMeters as StreamLnMeters " +
+                           "p.StreamLnMeters as StreamLnMeters, " +
+                           "p.CountySqMeters as CountySqMeters, " +
+                           "p.FocusSqMeters as FocusSqMeters, " +
+                           "p.SgmaSqMeters as SgmaSqMeters " +
                            "FROM PROJECT p WHERE p.Project_ID = @id"
+            },
+            {
+                "LandownershipRollup", "SELECT 'poly' as [table], 'owner' as origin, l.Owner as name, l.Admin as extra, l.[Intersect] as [space] " +
+                                       "FROM LANDOWNER l " +
+                                        "WHERE l.FeatureID in (SELECT poly.FeatureID from [dbo].[POLY] where poly.Project_ID = @id)"
             },
             {
                 "ProjectMinimal", "SELECT TOP 1 Project_ID as projectid, ProjectManager_ID as " +
@@ -96,6 +105,9 @@ namespace wri_webapi.Configuration
                                   "[StreamLnMeters] = (SELECT SUM([Intersect]) FROM [dbo].[STREAM] s WHERE s.[ProjectID] = @id), " +
                                   "[AffectedAreaSqMeters] = (SELECT SUM(poly.AreaSqMeters) FROM [dbo].[POLY] poly where poly.[Project_ID] = @id AND LOWER(poly.TypeDescription) = @affected), " +
                                   "[EasementAcquisitionSqMeters] = (SELECT SUM(poly.AreaSqMeters) FROM [dbo].[POLY] poly where poly.[Project_ID] = @id AND LOWER(poly.TypeDescription) = @easement), " +
+                                  "[CountySqMeters] = (SELECT SUM(county.[Intersect]) as [CountySqMeters] from [dbo].[COUNTY] county where county.FeatureID in (SELECT poly.FeatureID from [dbo].[POLY] where poly.Project_ID = @id)), " +
+                                  "[FocusSqMeters] = (SELECT SUM(focus.[Intersect]) as [CountySqMeters] from [dbo].[FOCUSAREA] focus where focus.FeatureID in (SELECT poly.FeatureID from [dbo].[POLY] where poly.Project_ID = @id)), " +
+                                  "[SgmaSqMeters] = (SELECT SUM(sgma.[Intersect]) as [CountySqMeters] from [dbo].[SGMA] sgma where sgma.FeatureID in (SELECT poly.FeatureID from [dbo].[POLY] where poly.Project_ID = @id)), " +
                                   "[Centroid] = (SELECT geometry::ConvexHullAggregate(polygons.shape).STCentroid() FROM " +
                                   "(SELECT geometry::ConvexHullAggregate(poly.Shape) AS shape FROM [dbo].[POLY] poly WHERE poly.Project_ID = @id UNION ALL " +
                                   "SELECT geometry::EnvelopeAggregate(line.Shape) FROM [dbo].[LINE] line WHERE line.Project_ID = @id UNION ALL " +
@@ -220,9 +232,17 @@ namespace wri_webapi.Configuration
             return await Task.Factory.StartNew(() => new DatabaseConnection(open, connection));
         }
 
-        public async Task<IEnumerable<Project>> ProjectQueryAsync(IDbConnection connection, object param = null)
+        public async Task<Project> ProjectQueryAsync(IDbConnection connection, object param = null)
         {
-            return await connection.QueryAsync<Project>(_sql["Project"], param);
+            var projects = await connection.QueryAsync<Project>(_sql["Project"], param);
+            var project = projects.FirstOrDefault();
+
+            if (project !=  null)
+            {
+                project.LandOwnership = await connection.QueryAsync<RelatedDetails>(_sql["LandownershipRollup"], param);
+            }
+
+            return project;
         }
 
         public async Task<IEnumerable<Project>> ProjectMinimalQueryAsync(IDbConnection connection, object param = null)

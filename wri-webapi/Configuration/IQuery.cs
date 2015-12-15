@@ -9,7 +9,7 @@ namespace wri_webapi.Configuration
     public interface IQuery
     {
         Task<DatabaseConnection> OpenConnection();
-        Task<IEnumerable<Project>> ProjectQueryAsync(IDbConnection connection, object param = null);
+        Task<Project> ProjectQueryAsync(IDbConnection connection, object param = null);
         Task<IEnumerable<Project>> ProjectMinimalQueryAsync(IDbConnection connection, object param = null);
         Task<IEnumerable<SpatialFeature>> FeatureQueryAsync(IDbConnection connection, object param = null);
         Task<IEnumerable<User>> UserQueryAsync(IDbConnection connection, object param = null);

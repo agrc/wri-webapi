@@ -30,8 +30,8 @@ namespace wri_webapi.Modules
                             .WithModel("Unable to connect to the database.");
                     }
 
-                    var projects = await queries.ProjectQueryAsync(connection, new {id});
-                    response.Project = projects.FirstOrDefault();
+                    var project = await queries.ProjectQueryAsync(connection, new {id});
+                    response.Project = project;
 
                     var features = await queries.FeatureQueryAsync(connection, new {id});
                     response.Features = features;

@@ -1,4 +1,5 @@
-﻿using wri_webapi.Extensions;
+﻿using System.Collections.Generic;
+using wri_webapi.Extensions;
 
 namespace wri_webapi.Models.Database
 {
@@ -12,7 +13,6 @@ namespace wri_webapi.Models.Database
         private string _county;
         private string _sgma;
         private string _focus;
-        private string _landown;
         public int ProjectId { get; set; }
         public int ProjectManagerId { get; set; }
         public string ProjectManagerName { get; set; }
@@ -71,10 +71,6 @@ namespace wri_webapi.Models.Database
             set { _sgma = value; }
         }
 
-        public string LandOwnerSqMeters
-        {
-            get { return _landown.InAcres(); }
-            set { _landown = value; }
-        }
+        public IEnumerable<RelatedDetails> LandOwnership { get; set; }
     }
 }
