@@ -91,7 +91,7 @@ namespace wri_webapi.Configuration
             },
             {
                 "ProjectSpatial", "UPDATE [dbo].[PROJECT] " +
-                                  "SET [TerrestrialSqMeters] = (SELECT SUM(poly.AreaSqMeters) FROM [dbo].[POLY] poly where poly.[Project_ID] = @id AND poly.TypeDescription = @terrestrial), " +
+                                  "SET [TerrestrialSqMeters] = (SELECT SUM(poly.AreaSqMeters) FROM [dbo].[POLY] poly where poly.[Project_ID] = @id AND LOWER(poly.TypeDescription) = @terrestrial), " +
                                   "[AqRipSqMeters] = (SELECT SUM(poly.AreaSqMeters) FROM [dbo].[POLY] poly where poly.[Project_ID] = @id AND LOWER(poly.TypeDescription) = @aquatic), " +
                                   "[StreamLnMeters] = (SELECT SUM([Intersect]) FROM [dbo].[STREAM] s WHERE s.[ProjectID] = @id), " +
                                   "[AffectedAreaSqMeters] = (SELECT SUM(poly.AreaSqMeters) FROM [dbo].[POLY] poly where poly.[Project_ID] = @id AND LOWER(poly.TypeDescription) = @affected), " +
