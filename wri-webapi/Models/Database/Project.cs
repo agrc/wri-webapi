@@ -1,18 +1,16 @@
 ﻿using System.Collections.Generic;
 using wri_webapi.Extensions;
+using wri_webapi.Models.Response;
 
 namespace wri_webapi.Models.Database
 {
-    public class Project
+    public class Project : SpatialFeatureResponse
     {
         private string _terrestrial;
         private string _affectedArea;
         private string _aquatic;
         private string _easement;
         private string _stream;
-        private string _county;
-        private string _sgma;
-        private string _focus;
         public int ProjectId { get; set; }
         public int ProjectManagerId { get; set; }
         public string ProjectManagerName { get; set; }
@@ -52,25 +50,5 @@ namespace wri_webapi.Models.Database
             get { return _stream.InMiles(); }
             set { _stream = value; }
         }
-
-        public string CountySqMeters
-        {
-            get { return _county.InAcres(); }
-            set { _county = value; }
-        }
-
-        public string FocusSqMeters
-        {
-            get { return _focus.InAcres(); }
-            set { _focus = value; }
-        }
-        
-        public string SgmaSqMeters
-        {
-            get { return _sgma.InAcres(); }
-            set { _sgma = value; }
-        }
-
-        public IEnumerable<RelatedDetails> LandOwnership { get; set; }
     }
 }
