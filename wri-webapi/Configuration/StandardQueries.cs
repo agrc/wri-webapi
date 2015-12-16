@@ -82,16 +82,26 @@ namespace wri_webapi.Configuration
                            "p.TerrestrialSqMeters as TerrestrialSqMeters, " +
                            "p.AqRipSqMeters as AquaticSqMeters, " +
                            "p.EasementAcquisitionSqMeters as EasementSqMeters, " +
-                           "p.StreamLnMeters as StreamLnMeters, " +
-                           "p.CountySqMeters as CountySqMeters, " +
-                           "p.FocusSqMeters as FocusSqMeters, " +
-                           "p.SgmaSqMeters as SgmaSqMeters " +
+                           "p.StreamLnMeters as StreamLnMeters " +
                            "FROM PROJECT p WHERE p.Project_ID = @id"
             },
             {
-                "LandownershipRollup", "SELECT 'poly' as [table], 'owner' as origin, l.Owner as name, l.Admin as extra, l.[Intersect] as [space] " +
-                                       "FROM LANDOWNER l " +
-                                        "WHERE l.FeatureID in (SELECT poly.FeatureID from [dbo].[POLY] where poly.Project_ID = @id)"
+                "ProjectRollup", "SELECT 'county' as origin, 'poly' as [table], " +
+                                 "c.County as name, null as extra, c.[Intersect] as [space] " +
+                                 "FROM COUNTY c " +
+                                 "WHERE c.FeatureID in (SELECT poly.FeatureID from [dbo].[POLY] where poly.Project_ID = @id)" +
+                                 "UNION SELECT 'focus' as origin, 'poly' as [table], " +
+                                 "f.Region as name, null as extra, f.[Intersect] as [space] " +
+                                 "FROM FOCUSAREA f " +
+                                 "WHERE f.FeatureID in (SELECT poly.FeatureID from [dbo].[POLY] where poly.Project_ID = @id)" +
+                                 "UNION SELECT 'sgma' as origin, 'poly' as [table], " +
+                                 "s.SGMA as name, null as extra, s.[Intersect] as [space] " +
+                                 "FROM SGMA s " +
+                                 "WHERE s.FeatureID in (SELECT poly.FeatureID from [dbo].[POLY] where poly.Project_ID = @id)" +
+                                 "UNION SELECT 'owner' as origin, 'poly' as [table], " +
+                                 "l.Owner as name, l.Admin as extra, l.[Intersect] as [space] " +
+                                 "FROM LANDOWNER l " +
+                                 "WHERE l.FeatureID in (SELECT poly.FeatureID from [dbo].[POLY] where poly.Project_ID = @id)"
             },
             {
                 "ProjectMinimal", "SELECT TOP 1 Project_ID as projectid, ProjectManager_ID as " +
@@ -105,9 +115,6 @@ namespace wri_webapi.Configuration
                                   "[StreamLnMeters] = (SELECT SUM([Intersect]) FROM [dbo].[STREAM] s WHERE s.[ProjectID] = @id), " +
                                   "[AffectedAreaSqMeters] = (SELECT SUM(poly.AreaSqMeters) FROM [dbo].[POLY] poly where poly.[Project_ID] = @id AND LOWER(poly.TypeDescription) = @affected), " +
                                   "[EasementAcquisitionSqMeters] = (SELECT SUM(poly.AreaSqMeters) FROM [dbo].[POLY] poly where poly.[Project_ID] = @id AND LOWER(poly.TypeDescription) = @easement), " +
-                                  "[CountySqMeters] = (SELECT SUM(county.[Intersect]) as [CountySqMeters] from [dbo].[COUNTY] county where county.FeatureID in (SELECT poly.FeatureID from [dbo].[POLY] where poly.Project_ID = @id)), " +
-                                  "[FocusSqMeters] = (SELECT SUM(focus.[Intersect]) as [CountySqMeters] from [dbo].[FOCUSAREA] focus where focus.FeatureID in (SELECT poly.FeatureID from [dbo].[POLY] where poly.Project_ID = @id)), " +
-                                  "[SgmaSqMeters] = (SELECT SUM(sgma.[Intersect]) as [CountySqMeters] from [dbo].[SGMA] sgma where sgma.FeatureID in (SELECT poly.FeatureID from [dbo].[POLY] where poly.Project_ID = @id)), " +
                                   "[Centroid] = (SELECT geometry::ConvexHullAggregate(polygons.shape).STCentroid() FROM " +
                                   "(SELECT geometry::ConvexHullAggregate(poly.Shape) AS shape FROM [dbo].[POLY] poly WHERE poly.Project_ID = @id UNION ALL " +
                                   "SELECT geometry::EnvelopeAggregate(line.Shape) FROM [dbo].[LINE] line WHERE line.Project_ID = @id UNION ALL " +
@@ -195,12 +202,12 @@ namespace wri_webapi.Configuration
             {
                 "watershedRestoration_FocusAreas", "INSERT INTO [dbo].[FOCUSAREA] " +
                                                    "(FeatureID, FeatureClass, Region, [Intersect]) " +
-                                                   "VALUES (@id, @featureClass, @region, @intersect)"
+                                                   "VALUES (@id, @featureClass, CONVERT(nvarchar(255), @region), @intersect)"
             },
             {
                 "sageGrouseManagementAreas", "INSERT INTO [dbo].[SGMA] " +
                                              "(FeatureID, FeatureClass, SGMA, [Intersect]) " +
-                                             "VALUES (@id, @featureClass, @sgma, @intersect)"
+                                             "VALUES (@id, @featureClass, CONVERT(nvarchar(255), @sgma), @intersect)"
             },
             {
                 "counties", "INSERT INTO [dbo].[COUNTY] " +
@@ -237,10 +244,18 @@ namespace wri_webapi.Configuration
             var projects = await connection.QueryAsync<Project>(_sql["Project"], param);
             var project = projects.FirstOrDefault();
 
-            if (project !=  null)
+            if (project == null)
             {
-                project.LandOwnership = await connection.QueryAsync<RelatedDetails>(_sql["LandownershipRollup"], param);
+                return null;
             }
+
+            var records = await ProjectRollupQueryAsync(connection, param);
+
+            project.County = records.Where(x => x.Origin == "county");
+            project.FocusArea = records.Where(x => x.Origin == "focus");
+            project.SageGrouse = records.Where(x => x.Origin == "sgma");
+            project.LandOwnership = records.Where(x => x.Origin == "owner");
+            project.LandOwnership = records.Where(x => x.Origin == "owner");
 
             return project;
         }
@@ -291,6 +306,11 @@ namespace wri_webapi.Configuration
             return await connection.ExecuteAsync(_sql[type], param, null, 240);
         }
 
+        public async Task<IEnumerable<RelatedDetails>> ProjectRollupQueryAsync(IDbConnection connection,
+            object param = null)
+        {
+            return await connection.QueryAsync<RelatedDetails>(_sql["ProjectRollup"], param);
+        }
         public async Task<IEnumerable<RelatedDetails>> RelatedDataQueryAsync(IDbConnection connection,
             object param = null)
         {
