@@ -86,22 +86,24 @@ namespace wri_webapi.Configuration
                            "FROM PROJECT p WHERE p.Project_ID = @id"
             },
             {
-                "ProjectRollup", "SELECT 'county' as origin, 'poly' as [table], " +
-                                 "c.County as name, null as extra, c.[Intersect] as [space] " +
-                                 "FROM COUNTY c " +
-                                 "WHERE c.FeatureID in (SELECT poly.FeatureID from [dbo].[POLY] where poly.Project_ID = @id)" +
-                                 "UNION SELECT 'focus' as origin, 'poly' as [table], " +
-                                 "f.Region as name, null as extra, f.[Intersect] as [space] " +
-                                 "FROM FOCUSAREA f " +
-                                 "WHERE f.FeatureID in (SELECT poly.FeatureID from [dbo].[POLY] where poly.Project_ID = @id)" +
-                                 "UNION SELECT 'sgma' as origin, 'poly' as [table], " +
-                                 "s.SGMA as name, null as extra, s.[Intersect] as [space] " +
-                                 "FROM SGMA s " +
-                                 "WHERE s.FeatureID in (SELECT poly.FeatureID from [dbo].[POLY] where poly.Project_ID = @id)" +
-                                 "UNION SELECT 'owner' as origin, 'poly' as [table], " +
-                                 "l.Owner as name, l.Admin as extra, l.[Intersect] as [space] " +
-                                 "FROM LANDOWNER l " +
-                                 "WHERE l.FeatureID in (SELECT poly.FeatureID from [dbo].[POLY] where poly.Project_ID = @id)"
+                "ProjectRollup", "SELECT origin, [table], name, extra, SUM([space]) AS [space] FROM (" +
+                                 "SELECT 'county' AS origin, 'poly' AS [table], " +
+                                 "c.County AS name, null AS extra, c.[Intersect] AS [space] " +
+                                 "from COUNTY c " +
+                                 "where c.FeatureID in (SELECT poly.FeatureID FROM [dbo].[POLY] WHERE poly.Project_ID = @id) " +
+                                 "UNION SELECT 'focus' AS origin, 'poly' AS [table], " +
+                                 "f.Region AS name, null AS extra, f.[Intersect] AS [space] " +
+                                 "from FOCUSAREA f " +
+                                 "where f.FeatureID in (SELECT poly.FeatureID FROM [dbo].[POLY] WHERE poly.Project_ID = @id) " +
+                                 "UNION SELECT 'sgma' AS origin, 'poly' AS [table], " +
+                                 "s.SGMA AS name, null AS extra, s.[Intersect] AS [space] " +
+                                 "from SGMA s " +
+                                 "where s.FeatureID in (SELECT poly.FeatureID FROM [dbo].[POLY] WHERE poly.Project_ID = @id) " +
+                                 "UNION SELECT 'owner' AS origin, 'poly' AS [table], " +
+                                 "l.Owner AS name, l.Admin AS extra, l.[Intersect] AS [space] " +
+                                 "from LANDOWNER l " +
+                                 "where l.FeatureID in (SELECT poly.FeatureID FROM [dbo].[POLY] WHERE poly.Project_ID = @id)) u " +
+                                 "group by u.origin, u.name, u.extra, u.[table]"
             },
             {
                 "ProjectMinimal", "SELECT TOP 1 Project_ID as projectid, ProjectManager_ID as " +
@@ -306,15 +308,16 @@ namespace wri_webapi.Configuration
             return await connection.ExecuteAsync(_sql[type], param, null, 240);
         }
 
-        public async Task<IEnumerable<RelatedDetails>> ProjectRollupQueryAsync(IDbConnection connection,
-            object param = null)
-        {
-            return await connection.QueryAsync<RelatedDetails>(_sql["ProjectRollup"], param);
-        }
         public async Task<IEnumerable<RelatedDetails>> RelatedDataQueryAsync(IDbConnection connection,
             object param = null)
         {
             return await connection.QueryAsync<RelatedDetails>(_sql["RelatedData"], param);
+        }
+
+        public async Task<IEnumerable<RelatedDetails>> ProjectRollupQueryAsync(IDbConnection connection,
+            object param = null)
+        {
+            return await connection.QueryAsync<RelatedDetails>(_sql["ProjectRollup"], param);
         }
     }
 }
