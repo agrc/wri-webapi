@@ -192,7 +192,7 @@ namespace wri_webapi.Configuration
             },
             {
                 "Overlap", "SELECT SUM(CONVERT(INT, " +
-                           "p.Shape.STOverlaps(dbo.STRoundGeometry(@wkt, 2, 2, 1, 1))) " +
+                           "p.Shape.STOverlaps(@wkt))) " +
                            "FROM [dbo].[POLY] p " +
                            "WHERE p.TypeDescription = @category AND p.Project_Id = @id and p.FeatureID != @featureId"
             },
